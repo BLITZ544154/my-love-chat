@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLITZ | Login</title>
+    <title>BLITZ | Quick Join</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -14,83 +14,67 @@
             display: flex; justify-content: center; align-items: center; font-family: 'Outfit', sans-serif;
         }
         .auth-card { 
-            background: rgba(20, 20, 25, 0.9); padding: 40px 30px; border-radius: 35px;
+            background: rgba(15, 15, 20, 0.95); padding: 40px 30px; border-radius: 35px;
             border: 1px solid rgba(0, 242, 255, 0.3); text-align: center; width: 90%; max-width: 380px;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
         }
-        h2 { color: var(--c1); margin-bottom: 30px; letter-spacing: 3px; font-weight: 600; }
+        h2 { color: var(--c1); margin-bottom: 30px; letter-spacing: 2px; }
         .input-box { position: relative; margin-bottom: 15px; }
         .input-box i { position: absolute; left: 15px; top: 18px; color: #555; }
         input { 
             width: 100%; padding: 15px 15px 15px 45px; border-radius: 15px; 
-            border: 1px solid #222; background: #000; color: #fff; font-size: 15px; transition: 0.3s;
+            border: 1px solid #222; background: #000; color: #fff; box-sizing: border-box;
         }
-        input:focus { border-color: var(--c1); outline: none; box-shadow: 0 0 10px rgba(0, 242, 255, 0.2); }
         .btn { 
             background: linear-gradient(45deg, var(--c1), var(--c2)); border: none; 
             padding: 16px; border-radius: 15px; color: #fff; font-weight: bold; width: 100%; 
-            cursor: pointer; margin-top: 15px; transition: 0.3s; font-size: 16px;
+            cursor: pointer; margin-top: 15px; font-size: 16px;
         }
-        .btn:disabled { opacity: 0.5; }
-        #otp-section { margin-top: 20px; border-top: 1px solid #222; padding-top: 20px; animation: fadeIn 0.5s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div class="auth-card">
-        <h2>REGISTER</h2>
-        <div class="input-box"><i class="fas fa-user"></i><input type="text" id="reg-name" placeholder="သင့်နာမည်"></div>
-        <div class="input-box"><i class="fas fa-phone"></i><input type="text" id="reg-phone" placeholder="ဖုန်းနံပါတ်"></div>
-        <div class="input-box"><i class="fas fa-envelope"></i><input type="email" id="reg-email" placeholder="လက်ခံမည့် Gmail"></div>
-        <div class="input-box"><i class="fas fa-lock"></i><input type="password" id="reg-pass" placeholder="Password"></div>
+        <h2>BLITZ JOIN</h2>
+        <div class="input-box"><i class="fas fa-user"></i><input type="text" id="name" placeholder="နာမည်"></div>
+        <div class="input-box"><i class="fas fa-phone"></i><input type="text" id="phone" placeholder="ဖုန်းနံပါတ်"></div>
+        <div class="input-box"><i class="fas fa-envelope"></i><input type="email" id="email" placeholder="Gmail"></div>
+        <div class="input-box"><i class="fas fa-lock"></i><input type="password" id="pass" placeholder="Password"></div>
         
-        <button class="btn" id="reg-btn" onclick="requestOTP()">GET OTP</button>
-
-        <div id="otp-section" style="display:none;">
-            <div class="input-box"><i class="fas fa-key"></i><input type="text" id="otp-input" placeholder="OTP ၆ လုံး ရိုက်ပါ"></div>
-            <button class="btn" onclick="verifyOTP()" style="background: var(--c1); color: #000;">VERIFY & CREATE ACCOUNT</button>
-        </div>
+        <button class="btn" id="join-btn" onclick="register()">REGISTER NOW</button>
+        <p style="font-size: 12px; margin-top: 20px; color: #666;">
+            လုံခြုံရေးအတွက် OTP စနစ်ကို နောက်ပိုင်းတွင် ထည့်သွင်းပေးပါမည်။
+        </p>
     </div>
 
     <script>
         const socket = io();
-        const regBtn = document.getElementById('reg-btn');
 
-        function requestOTP() {
+        function register() {
+            const btn = document.getElementById('join-btn');
             const data = {
-                name: document.getElementById('reg-name').value,
-                phone: document.getElementById('reg-phone').value,
-                email: document.getElementById('reg-email').value,
-                password: document.getElementById('reg-pass').value
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('pass').value
             };
-            if(!data.email.includes('@')) return alert("Gmail မှန်အောင် ရိုက်ပါဗျာ");
 
-            regBtn.disabled = true;
-            regBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-            socket.emit('request_otp', data);
+            if(!data.name || !data.phone || !data.pass) return alert("အချက်အလက်အစုံဖြည့်ပါ");
+
+            btn.disabled = true;
+            btn.innerHTML = "Creating Account...";
+            socket.emit('register_user', data);
         }
 
-        socket.on('otp_sent', () => {
-            alert("အောင်မြင်ပါသည်! Gmail ကို စစ်ဆေးပါ");
-            document.getElementById('otp-section').style.display = 'block';
-            regBtn.innerHTML = "OTP Sent ✅";
+        socket.on('register_success', () => {
+            alert("အကောင့်ဖွင့်ခြင်း အောင်မြင်ပါသည်! ယခု Login ဝင်နိုင်ပါပြီ။");
+            location.reload();
         });
 
         socket.on('error_msg', (msg) => {
             alert(msg);
-            regBtn.disabled = false;
-            regBtn.innerHTML = "GET OTP";
+            document.getElementById('join-btn').disabled = false;
+            document.getElementById('join-btn').innerHTML = "REGISTER NOW";
         });
-
-        socket.on('register_success', () => { alert("အကောင့်ဖွင့်ခြင်း အောင်မြင်ပါသည်!"); location.reload(); });
-
-        function verifyOTP() {
-            socket.emit('verify_otp', { 
-                email: document.getElementById('reg-email').value, 
-                otp: document.getElementById('otp-input').value 
-            });
-        }
     </script>
 </body>
 </html>

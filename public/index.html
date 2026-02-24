@@ -1,22 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Our Love Chat</title>
+    <title>❤️ Our Private Space</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: sans-serif; margin: 0; padding-bottom: 3rem; background: #fdf2f8; }
-        #form { background: rgba(0, 0, 0, 0.15); padding: 0.25rem; position: fixed; bottom: 0; left: 0; right: 0; display: flex; height: 3rem; box-sizing: border-box; backdrop-filter: blur(10px); }
-        #input { border: none; padding: 0 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem; }
-        #input:focus { outline: none; }
-        #form > button { background: #ec4899; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 3px; outline: none; color: #fff; cursor: pointer; }
-        #messages { list-style-type: none; margin: 0; padding: 0; }
-        #messages > li { padding: 0.5rem 1rem; background: white; margin: 5px; border-radius: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        :root { --my-bubble: #ff4d94; --other-bubble: #ffffff; --bg-color: #fce7f3; }
+        body { font-family: sans-serif; margin: 0; background: var(--bg-color); display: flex; flex-direction: column; height: 100vh; }
+        #messages { list-style-type: none; margin: 0; padding: 20px; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .message { max-width: 75%; padding: 10px 15px; border-radius: 20px; font-size: 15px; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .my-msg { align-self: flex-end; background: var(--my-bubble); color: white; }
+        .other-msg { align-self: flex-start; background: var(--other-bubble); color: #333; }
+        .user-name { font-size: 10px; margin-bottom: 2px; opacity: 0.8; }
+        #form { background: white; padding: 10px; display: flex; gap: 5px; }
+        #input { border: 1px solid #ddd; padding: 10px; flex-grow: 1; border-radius: 20px; outline: none; }
+        #form > button { background: var(--my-bubble); border: none; padding: 10px 20px; border-radius: 20px; color: white; cursor: pointer; }
     </style>
 </head>
 <body>
     <ul id="messages"></ul>
-    <form id="form" action="">
-        <input id="input" autocomplete="off" placeholder="စာရိုက်ပါ..." /><button>Send</button>
+    <form id="form">
+        <input id="input" autocomplete="off" placeholder="စာရိုက်ပါ..." /><button type="submit">Send</button>
     </form>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -24,37 +27,38 @@
         const socket = io();
         const form = document.getElementById('form');
         const input = document.getElementById('input');
-        const messages = document.getElementById('messages');
+        const messagesList = document.getElementById('messages');
 
-        // နာမည်မေးမယ် (ယာယီ)
-        const username = prompt("သင့်နာမည်ကို ရိုက်ထည့်ပါ:") || "Anonymous";
+        let myName = localStorage.getItem('chat-name') || prompt("သင့်နာမည်ကို ရိုက်ထည့်ပါ:") || "User";
+        localStorage.setItem('chat-name', myName);
 
-        // စာဟောင်းတွေကို Database ကနေ ပြန်ပြမယ်
+        function addMessageToUI(msg) {
+            const item = document.createElement('li');
+            const isMe = msg.user === myName;
+            item.className = `message ${isMe ? 'my-msg' : 'other-msg'}`;
+            item.innerHTML = `<div class="user-name">${msg.user}</div><div>${msg.text}</div>`;
+            messagesList.appendChild(item);
+            messagesList.scrollTop = messagesList.scrollHeight;
+        }
+
+        // စာဟောင်းတွေပြမယ်
         socket.on('load messages', (msgs) => {
-            msgs.forEach(msg => {
-                displayMessage(msg);
-            });
-            window.scrollTo(0, document.body.scrollHeight);
+            messagesList.innerHTML = '';
+            msgs.forEach(addMessageToUI);
+        });
+
+        // စာအသစ်ဝင်လာရင်ပြမယ်
+        socket.on('chat message', (msg) => {
+            addMessageToUI(msg);
         });
 
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             if (input.value) {
-                socket.emit('chat message', { user: username, text: input.value });
+                socket.emit('chat message', { user: myName, text: input.value });
                 input.value = '';
             }
         });
-
-        socket.on('chat message', (msg) => {
-            displayMessage(msg);
-            window.scrollTo(0, document.body.scrollHeight);
-        });
-
-        function displayMessage(msg) {
-            const item = document.createElement('li');
-            item.innerHTML = `<strong>${msg.user}:</strong> ${msg.text}`;
-            messages.appendChild(item);
-        }
     </script>
 </body>
 </html>

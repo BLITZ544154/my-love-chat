@@ -18,14 +18,17 @@ const User = mongoose.model('User', new mongoose.Schema({
     phone: String, email: String, password: String, name: String, points: { type: Number, default: 0 }
 }));
 
-// Gmail Transporter Setup
+// Gmail Transporter with your NEW App Password
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
     secure: true,
     auth: {
         user: 'stunchou493@gmail.com',
-        pass: 'tovmlaupjjudauce' // Space လုံးဝမပါရပါ
+        pass: 'ubmwzrjjqtduopnb' // Space မပါတဲ့ ကုဒ်အသစ်
+    },
+    tls: {
+        rejectUnauthorized: false // Google Block တာကို ကျော်ဖို့
     }
 });
 
@@ -42,14 +45,14 @@ io.on('connection', (socket) => {
         const mailOptions = {
             from: '"BLITZ Admin" <stunchou493@gmail.com>',
             to: data.email,
-            subject: 'BLITZ Community Verification Code',
+            subject: 'BLITZ App OTP Code',
             text: `မင်္ဂလာပါ ${data.name}၊ အကောင့်ဖွင့်ရန် OTP ကုဒ်မှာ ${otp} ဖြစ်သည်။`
         };
 
         transporter.sendMail(mailOptions, (err) => {
             if (err) {
-                console.log("GMAIL ERROR:", err.message); // Render Logs မှာ စစ်ရန်
-                socket.emit('error_msg', "Email ပို့လို့မရပါဘူး။ Gmail App Password ကို ပြန်စစ်ပါ။");
+                console.log("GMAIL ERROR:", err.message);
+                socket.emit('error_msg', "Email ပို့လို့မရပါဘူး။ Log ကို စစ်ပေးပါ။");
             } else {
                 socket.emit('otp_sent');
             }
@@ -68,16 +71,7 @@ io.on('connection', (socket) => {
             socket.emit('error_msg', "OTP ကုဒ် မှားယွင်းနေပါသည်။");
         }
     });
-
-    socket.on('login', async (data) => {
-        const user = await User.findOne({ phone: data.phone });
-        if (user && await bcrypt.compare(data.password, user.password)) {
-            socket.emit('login_success', user);
-        } else {
-            socket.emit('error_msg', "အချက်အလက် မှားယွင်းနေပါသည်။");
-        }
-    });
 });
 
 const PORT = process.env.PORT || 10000;
-server.listen(PORT, '0.0.0.0', () => console.log(`Server is Live on ${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`Server running on ${PORT}`));

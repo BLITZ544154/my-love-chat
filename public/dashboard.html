@@ -14,72 +14,105 @@
         .logo { font-size: 22px; font-weight: 600; color: var(--c1); letter-spacing: 2px; }
         .container { padding: 20px; max-width: 500px; margin: auto; }
         .profile-card { background: #111; padding: 30px; border-radius: 30px; border: 1px solid #222; text-align: center; }
-        .profile-img { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--c1); margin: 0 auto 15px; overflow: hidden; }
+        .profile-img { width: 110px; height: 110px; border-radius: 50%; border: 3px solid var(--c1); margin: 0 auto 15px; overflow: hidden; background: #000; }
         .profile-img img { width: 100%; height: 100%; object-fit: cover; }
         .badge-box { margin: 10px 0; display: flex; justify-content: center; gap: 5px; }
-        .badge { font-size: 12px; background: var(--c2); padding: 3px 8px; border-radius: 10px; }
-        .stat-bar { background: #000; padding: 10px; border-radius: 15px; margin: 15px 0; color: var(--c1); border: 1px solid #222; }
-        .btn-edit { background: #222; border: 1px solid #444; color: #fff; padding: 8px 20px; border-radius: 20px; cursor: pointer; }
+        .badge { font-size: 11px; background: linear-gradient(45deg, var(--c1), var(--c2)); padding: 4px 10px; border-radius: 12px; font-weight: bold; }
+        .stat-bar { background: rgba(0,242,255,0.1); padding: 12px; border-radius: 15px; margin: 15px 0; color: var(--c1); border: 1px solid rgba(0,242,255,0.2); font-weight: 600; }
+        .btn-edit { background: #222; border: 1px solid #444; color: #fff; padding: 10px 25px; border-radius: 25px; cursor: pointer; }
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; }
-        .menu-item { background: #111; padding: 20px; border-radius: 20px; border: 1px solid #222; text-align: center; }
+        .menu-item { background: #111; padding: 20px; border-radius: 20px; border: 1px solid #222; text-align: center; cursor: pointer; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: #111; padding: 30px; border-radius: 30px; width: 85%; max-width: 360px; border: 1px solid var(--c1); text-align: center; }
+        input[type="text"] { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 12px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
     <div class="navbar">
         <div class="logo">GLOW <span style="color:var(--c2)">Z-SPACE</span></div>
-        <div style="display:flex; gap:15px; color:var(--c1);">
-            <i class="fas fa-store"></i> <i class="fas fa-tasks"></i>
+        <div style="display:flex; gap:18px; align-items: center;">
+            <i class="fas fa-store" style="color:var(--c1);"></i>
+            <i class="fas fa-tasks" style="color:var(--c2);"></i>
         </div>
     </div>
 
     <div class="container">
         <div class="profile-card">
-            <div class="profile-img" id="p-img"><img src="https://via.placeholder.com/100" id="user-pic"></div>
-            <div class="badge-box" id="user-badges"><span class="badge">Z-NEWBIE</span></div>
-            <h2 id="display-name" style="margin:5px 0;">User Name</h2>
-            <p id="display-phone" style="color:#666; font-size:14px;">09xxxxxxxxx</p>
+            <div class="profile-img"><img src="https://via.placeholder.com/110" id="user-pic"></div>
+            <div class="badge-box" id="user-badges"></div>
+            <h2 id="display-name">Loading...</h2>
+            <p id="display-phone" style="color:#666; font-size:14px;"></p>
             <div class="stat-bar"><i class="fas fa-coins"></i> Points: <span id="display-points">0</span></div>
-            <button class="btn-edit" onclick="editProfile()">EDIT PROFILE</button>
+            <button class="btn-edit" onclick="openModal()">EDIT PROFILE</button>
         </div>
 
         <div class="menu-grid">
             <div class="menu-item" onclick="location.href='chat.html'"><i class="fas fa-comments" style="color:var(--c1)"></i><br>Chat</div>
             <div class="menu-item"><i class="fas fa-heart" style="color:var(--c2)"></i><br>Matches</div>
-            <div class="menu-item"><i class="fas fa-gift" style="color:#ffaa00"></i><br>Store</div>
+            <div class="menu-item"><i class="fas fa-gem" style="color:#ffaa00"></i><br>Store</div>
             <div class="menu-item" onclick="logout()"><i class="fas fa-sign-out-alt"></i><br>Logout</div>
+        </div>
+    </div>
+
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <h3 style="color:var(--c1)">Edit Profile</h3>
+            <input type="file" id="fileInput" accept="image/*" style="margin-bottom:15px; font-size:12px;">
+            <input type="text" id="edit-bio" placeholder="Bio">
+            <div style="text-align:left; font-size:13px; margin: 10px 0;"><label><input type="checkbox" id="edit-hidePhone"> Hide Phone</label></div>
+            <button onclick="saveProfile()" style="width:100%; padding:12px; background:var(--c1); border:none; border-radius:12px; font-weight:bold;">SAVE</button>
+            <button onclick="closeModal()" style="background:none; border:none; color:#666; margin-top:10px;">Cancel</button>
         </div>
     </div>
 
     <script>
         const socket = io();
         let user = JSON.parse(localStorage.getItem('user'));
+        const adminPhone = '09688543022';
 
-        if(!user) location.href = 'index.html';
+        if(!user) {
+            location.href = 'index.html';
+        } else {
+            if (user.phone === adminPhone) {
+                user.points = 999999;
+                user.isAdmin = true;
+            }
+            updateUI();
+        }
 
-        // Display User Info
-        document.getElementById('display-name').innerText = user.privacy.hideName ? "Hidden User" : user.name;
-        document.getElementById('display-phone').innerText = user.privacy.hidePhone ? "Phone Hidden" : user.phone;
-        document.getElementById('display-points').innerText = user.points;
-        if(user.profilePic) document.getElementById('user-pic').src = user.profilePic;
+        function updateUI() {
+            document.getElementById('display-name').innerText = user.name;
+            document.getElementById('display-phone').innerText = user.privacy.hidePhone ? "Phone Hidden" : user.phone;
+            document.getElementById('display-points').innerText = user.points.toLocaleString();
+            const badgeBox = document.getElementById('user-badges');
+            badgeBox.innerHTML = user.isAdmin ? '<span class="badge">DEVELOPER</span><span class="badge" style="background:#ffaa00;">VIP</span>' : '<span class="badge" style="background:#444;">MEMBER</span>';
+            if(user.profilePic) document.getElementById('user-pic').src = user.profilePic;
+        }
 
-        function editProfile() {
-            const newBio = prompt("သင့် Bio ကို ရေးပါ:", user.bio);
-            const newPic = prompt("Profile ပုံ URL ထည့်ပါ (ဥပမာ- https://...)");
-            const hPhone = confirm("ဖုန်းနံပါတ် ဖျောက်ထားမလား?");
-            
-            socket.emit('update_profile', {
-                phone: user.phone,
-                profilePic: newPic || user.profilePic,
-                bio: newBio || user.bio,
-                hidePhone: hPhone,
-                hideName: false
-            });
+        function openModal() { document.getElementById('editModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('editModal').style.display = 'none'; }
+
+        function saveProfile() {
+            const fileInput = document.getElementById('fileInput');
+            const bio = document.getElementById('edit-bio').value;
+            const hp = document.getElementById('edit-hidePhone').checked;
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => sendUpdate(e.target.result, bio, hp);
+                reader.readAsDataURL(fileInput.files[0]);
+            } else { sendUpdate(user.profilePic, bio, hp); }
+        }
+
+        function sendUpdate(pic, bio, hp) {
+            socket.emit('update_profile', { phone: user.phone, profilePic: pic, bio, hidePhone: hp, hideName: false });
+            closeModal();
         }
 
         socket.on('update_success', (updatedUser) => {
+            if(updatedUser.phone === adminPhone) updatedUser.points = 999999;
             localStorage.setItem('user', JSON.stringify(updatedUser));
-            location.reload();
+            user = updatedUser; updateUI();
         });
 
         function logout() { localStorage.clear(); location.href = 'index.html'; }

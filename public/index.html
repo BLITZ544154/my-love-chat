@@ -8,140 +8,138 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root { --c1:#00f2ff; --c2:#ff0055; --bg:#050508; --card:rgba(20,20,30,0.8); }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: #fff; overflow: hidden; }
-        .screen { display: none; height: 100vh; flex-direction: column; }
-        .active { display: flex; }
+        :root { --c1:#00f2ff; --c2:#ff0055; --bg:#050508; --card:rgba(20,20,30,0.9); }
         
-        /* Auth UI */
-        #auth-screen { justify-content: center; align-items: center; padding: 20px; }
-        .auth-card { background: var(--card); padding: 30px; border-radius: 30px; border: 2px solid var(--c1); text-align: center; width: 100%; max-width: 350px; }
-        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #333; background: #000; color: #fff; }
-        .btn { background: linear-gradient(45deg, var(--c1), var(--c2)); border: none; padding: 15px; border-radius: 12px; color: #fff; font-weight: bold; width: 100%; cursor: pointer; }
+        * { box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            margin: 0; 
+            background: var(--bg); 
+            color: #fff; 
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-        /* Dashboard */
+        .screen { display: none; width: 100%; height: 100vh; flex-direction: column; }
+        .active { display: flex; justify-content: center; align-items: center; }
+
+        /* Auth Card Center Alignment */
+        .auth-card { 
+            background: var(--card); 
+            padding: 40px 25px; 
+            border-radius: 30px; 
+            border: 2px solid var(--c1); 
+            text-align: center; 
+            width: 90%; 
+            max-width: 380px;
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);
+        }
+
+        input { 
+            width: 100%; 
+            padding: 15px; 
+            margin: 12px 0; 
+            border-radius: 12px; 
+            border: 1px solid #333; 
+            background: #000; 
+            color: #fff; 
+            font-size: 16px;
+            text-align: center; /* စာရိုက်ရင် အလယ်ကပေါ်အောင် */
+        }
+
+        .btn { 
+            background: linear-gradient(45deg, var(--c1), var(--c2)); 
+            border: none; 
+            padding: 16px; 
+            border-radius: 12px; 
+            color: #fff; 
+            font-weight: bold; 
+            width: 100%; 
+            cursor: pointer; 
+            font-size: 16px;
+            transition: 0.3s;
+        }
+        
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* Dashboard UI */
+        #main-screen { justify-content: flex-start; align-items: stretch; }
         .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); }
-        .points-box { color: var(--c1); font-weight: bold; border: 1px solid var(--c1); padding: 5px 12px; border-radius: 20px; }
-        #home-content { padding: 20px; overflow-y: auto; flex-grow: 1; padding-bottom: 80px; }
-
-        /* Bio Stats Card */
-        .bio-stats { background: var(--card); border: 1px solid var(--c1); border-radius: 20px; padding: 15px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; }
-        .stat-val { color: var(--c1); font-weight: bold; }
-
-        /* Navigation */
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #222; }
-        .nav-item { background: none; border: none; color: #666; font-size: 20px; }
-        .nav-active { color: var(--c1); }
-
+        
         /* Chat */
-        #chat-area { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 10px 15px; border-radius: 15px; max-width: 80%; }
-        .mine { align-self: flex-end; background: var(--c1); color: #000; }
-        .others { align-self: flex-start; background: #222; }
+        #chat-area { flex-grow: 1; overflow-y: auto; padding: 20px; }
     </style>
 </head>
 <body>
 
     <div id="auth-screen" class="screen active">
         <div class="auth-card" id="reg-form">
-            <h2 style="color:var(--c1)">REGISTER</h2>
+            <h2 style="color:var(--c1); margin-top:0;">REGISTER</h2>
             <input type="text" id="reg-name" placeholder="နာမည်">
             <input type="text" id="reg-phone" placeholder="ဖုန်းနံပါတ်">
-            <input type="email" id="reg-email" placeholder="Gmail (OTP ပို့ရန်)">
+            <input type="email" id="reg-email" placeholder="Gmail လိပ်စာ (OTP အတွက်)">
             <input type="password" id="reg-pass" placeholder="Password">
-            <button class="btn" id="reg-btn" onclick="requestOTP()">GET OTP</button>
-            <div id="otp-section" style="display:none; margin-top:15px;">
-                <input type="text" id="otp-input" placeholder="OTP ၆ လုံး">
-                <button class="btn" onclick="verifyOTP()">REGISTER</button>
+            
+            <button class="btn" id="reg-btn" onclick="requestOTP()">
+                <i class="fas fa-paper-plane"></i> GET OTP
+            </button>
+
+            <div id="otp-section" style="display:none; margin-top:15px; border-top: 1px solid #333; padding-top: 15px;">
+                <input type="text" id="otp-input" placeholder="OTP ၆ လုံး ရိုက်ပါ">
+                <button class="btn" onclick="verifyOTP()" style="background:var(--c1); color:#000;">REGISTER NOW</button>
             </div>
-            <p onclick="showLogin()" style="font-size:12px; margin-top:10px;">Login ပြန်ဝင်မည်</p>
+            
+            <p onclick="showLogin()" style="font-size:13px; margin-top:20px; cursor:pointer; color:var(--c1);">အကောင့်ရှိပြီးသားလား? Login ဝင်မည်</p>
         </div>
 
         <div class="auth-card" id="login-form" style="display:none;">
-            <h2 style="color:var(--c1)">LOGIN</h2>
+            <h2 style="color:var(--c1); margin-top:0;">LOGIN</h2>
             <input type="text" id="login-phone" placeholder="ဖုန်းနံပါတ်">
             <input type="password" id="login-pass" placeholder="Password">
             <button class="btn" onclick="login()">LOGIN</button>
-            <p onclick="showRegister()" style="font-size:12px; margin-top:10px;">အကောင့်ဖွင့်မည်</p>
+            <p onclick="showRegister()" style="font-size:13px; margin-top:20px; cursor:pointer; color:var(--c1);">အကောင့်မရှိသေးရင် Register လုပ်ပါ</p>
         </div>
     </div>
 
     <div id="main-screen" class="screen">
-        <div class="header">
-            <div>Hello, <b id="u-name">...</b></div>
-            <div class="points-box">🪙 <span id="u-points">0</span></div>
         </div>
-
-        <div id="tab-home" class="tab-content" style="flex-grow:1; overflow-y:auto;">
-            <div id="home-content">
-                <div class="bio-stats">
-                    <img src="https://blitz1224.github.io/blitz-links/chou-icon.jpg" width="50" style="border-radius:10px">
-                    <div style="font-size:12px">
-                        <div class="stat-val">SIGNATURE: CHOU</div>
-                        MMR: <span class="stat-val" id="mmr-val">...</span> | WR: <span class="stat-val" id="wr-val">...</span>
-                    </div>
-                </div>
-
-                <div class="bio-stats" style="border-color:var(--c2)">
-                    <div style="font-size:12px">
-                        🏆 TOP SUPPORTER: <span class="stat-val" id="fan-val">...</span><br>
-                        ❤️ RS DAYS: <span class="stat-val" id="rs-timer">0 Days</span>
-                    </div>
-                </div>
-
-                <button class="btn" onclick="checkIn()" style="margin-bottom:15px;">🎁 DAILY CHECK-IN (+50)</button>
-                
-                <iframe src="https://blitz1224.github.io/blitz-links/" style="width:100%; height:400px; border:2px solid #222; border-radius:20px;"></iframe>
-            </div>
-        </div>
-
-        <div id="tab-chat" class="tab-content" style="display:none; flex-grow:1; flex-direction:column; overflow:hidden;">
-            <div id="chat-area"></div>
-            <div style="padding:15px; display:flex; gap:10px; background:#000;">
-                <input id="chat-input" placeholder="စာရိုက်ပါ..." style="margin:0;">
-                <button class="btn" style="width:auto; padding:0 20px;" onclick="sendMsg()">Send</button>
-            </div>
-        </div>
-
-        <div class="nav-bar">
-            <button class="nav-item nav-active" onclick="showTab('home', this)"><i class="fas fa-home"></i></button>
-            <button class="nav-item" onclick="showTab('chat', this)"><i class="fas fa-comment"></i></button>
-        </div>
-    </div>
 
     <script>
         const socket = io();
-        const SB_URL = "https://zfhumhwmfqdexgzvtrpp.supabase.co"; 
-        const SB_KEY = "sb_publishable_7Kxf-6gazHN3n-Wo-NNvHA_LpQ7rCG8"; 
-        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
-        let user = null;
-
-        async function syncBio() {
-            const { data } = await supabaseClient.from('stats').select('*');
-            if (data) {
-                data.forEach(item => {
-                    if (item.name === 'mmr') document.getElementById('mmr-val').innerText = item.value;
-                    if (item.name === 'wr') document.getElementById('wr-val').innerText = item.value;
-                    if (item.name === 'top_fan') document.getElementById('fan-val').innerText = item.value;
-                });
-            }
-        }
+        const regBtn = document.getElementById('reg-btn');
 
         function requestOTP() {
-            const data = { name: document.getElementById('reg-name').value, phone: document.getElementById('reg-phone').value, email: document.getElementById('reg-email').value, password: document.getElementById('reg-pass').value };
-            socket.emit('request_otp', data);
+            const name = document.getElementById('reg-name').value;
+            const phone = document.getElementById('reg-phone').value;
+            const email = document.getElementById('reg-email').value;
+            const pass = document.getElementById('reg-pass').value;
+
+            if(!name || !phone || !email || !pass) return alert("အချက်အလက် အကုန်ဖြည့်ပါဗျာ။");
+            if(!email.includes('@')) return alert("Gmail လိပ်စာ မှန်အောင် ရိုက်ပါဗျာ။");
+
+            // သိသာအောင် Button ကို Loading ပြောင်းမယ်
+            regBtn.disabled = true;
+            regBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ခဏစောင့်ပါ...';
+
+            socket.emit('request_otp', { name, phone, email, password: pass });
         }
-        socket.on('otp_sent', () => { alert("Gmail ထဲ OTP ပို့လိုက်ပြီ!"); document.getElementById('otp-section').style.display='block'; });
-        function verifyOTP() { socket.emit('verify_otp', { email: document.getElementById('reg-email').value, otp: document.getElementById('otp-input').value }); }
-        socket.on('register_success', () => { alert("အောင်မြင်ပါသည်!"); location.reload(); });
-        function login() { socket.emit('login', { phone: document.getElementById('login-phone').value, password: document.getElementById('login-pass').value }); }
-        socket.on('login_success', (u) => { user = u; document.getElementById('auth-screen').style.display='none'; document.getElementById('main-screen').classList.add('active'); document.getElementById('u-name').innerText=u.name; document.getElementById('u-points').innerText=u.points; syncBio(); });
-        socket.on('error_msg', (m) => alert(m));
-        function showTab(t, b) { document.querySelectorAll('.tab-content').forEach(x=>x.style.display='none'); document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('nav-active')); document.getElementById('tab-'+t).style.display=t==='chat'?'flex':'block'; b.classList.add('nav-active'); }
-        function checkIn() { socket.emit('daily_checkin', user.phone); }
-        socket.on('update_user', (u) => { user=u; document.getElementById('u-points').innerText=u.points; });
-        function sendMsg() { const i = document.getElementById('chat-input'); if(i.value) { socket.emit('chat message', { user: user.name, text: i.value }); i.value=''; } }
-        socket.on('chat message', (m) => { const a = document.getElementById('chat-area'); const d = document.createElement('div'); d.className=`msg ${m.user===user.name?'mine':'others'}`; d.innerHTML=`<small>${m.user}</small><br>${m.text}`; a.appendChild(d); a.scrollTop=a.scrollHeight; });
+
+        socket.on('otp_sent', () => {
+            alert("အောင်မြင်ပါသည်! သင့် Gmail ထဲကို OTP ကုဒ် ပို့လိုက်ပါပြီ။");
+            regBtn.innerHTML = '<i class="fas fa-check"></i> OTP ပို့ပြီးပါပြီ';
+            document.getElementById('otp-section').style.display = 'block';
+        });
+
+        socket.on('error_msg', (msg) => {
+            alert(msg);
+            regBtn.disabled = false;
+            regBtn.innerHTML = '<i class="fas fa-paper-plane"></i> GET OTP';
+        });
+
+        // တခြား JavaScript Logic များ (verifyOTP, login စသည်) ဒီအောက်မှာ ဆက်ထည့်ပါ...
         function showLogin() { document.getElementById('reg-form').style.display='none'; document.getElementById('login-form').style.display='block'; }
         function showRegister() { document.getElementById('reg-form').style.display='block'; document.getElementById('login-form').style.display='none'; }
     </script>

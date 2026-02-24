@@ -3,90 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLITZ | Register</title>
+    <title>BLITZ | Login & Register</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root { --c1: #00f2ff; --c2: #ff0055; --bg: #050508; }
-        body { 
-            margin: 0; background: var(--bg); color: #fff; height: 100vh;
-            display: flex; justify-content: center; align-items: center; font-family: 'Outfit', sans-serif;
-        }
-        .auth-card { 
-            background: rgba(15, 15, 20, 0.95); padding: 40px 30px; border-radius: 35px;
-            border: 1px solid rgba(0, 242, 255, 0.3); text-align: center; width: 90%; max-width: 380px;
-            box-shadow: 0 0 20px rgba(0, 242, 255, 0.1);
-        }
-        h2 { color: var(--c1); margin-bottom: 30px; letter-spacing: 2px; }
+        body { margin: 0; background: var(--bg); color: #fff; height: 100vh; display: flex; justify-content: center; align-items: center; font-family: 'Outfit', sans-serif; }
+        .auth-card { background: rgba(15, 15, 20, 0.95); padding: 40px 30px; border-radius: 35px; border: 1px solid rgba(0, 242, 255, 0.3); text-align: center; width: 90%; max-width: 380px; }
         .input-box { position: relative; margin-bottom: 15px; }
         .input-box i { position: absolute; left: 15px; top: 18px; color: #555; }
-        input { 
-            width: 100%; padding: 15px 15px 15px 45px; border-radius: 15px; 
-            border: 1px solid #222; background: #000; color: #fff; font-size: 15px; box-sizing: border-box;
-        }
-        input:focus { border-color: var(--c1); outline: none; }
-        .btn { 
-            background: linear-gradient(45deg, var(--c1), var(--c2)); border: none; 
-            padding: 16px; border-radius: 15px; color: #fff; font-weight: bold; width: 100%; 
-            cursor: pointer; margin-top: 15px; font-size: 16px; transition: 0.3s;
-        }
-        .btn:hover { opacity: 0.8; transform: scale(1.02); }
-        .footer-text { font-size: 12px; margin-top: 20px; color: #666; }
+        input { width: 100%; padding: 15px 15px 15px 45px; border-radius: 15px; border: 1px solid #222; background: #000; color: #fff; box-sizing: border-box; }
+        .btn { background: linear-gradient(45deg, var(--c1), var(--c2)); border: none; padding: 16px; border-radius: 15px; color: #fff; font-weight: bold; width: 100%; cursor: pointer; margin-top: 15px; font-size: 16px; }
+        .toggle-link { color: var(--c1); cursor: pointer; margin-top: 20px; font-size: 14px; display: block; }
     </style>
 </head>
 <body>
 
-    <div class="auth-card">
-        <h2>BLITZ JOIN</h2>
-        <div class="input-box"><i class="fas fa-user"></i><input type="text" id="name" placeholder="နာမည်"></div>
-        <div class="input-box"><i class="fas fa-phone"></i><input type="text" id="phone" placeholder="ဖုန်းနံပါတ်"></div>
-        <div class="input-box"><i class="fas fa-envelope"></i><input type="email" id="email" placeholder="Gmail"></div>
-        <div class="input-box"><i class="fas fa-lock"></i><input type="password" id="pass" placeholder="Password"></div>
-        
-        <button class="btn" id="join-btn" onclick="register()">REGISTER NOW</button>
-        <p class="footer-text">လုံခြုံရေးအတွက် OTP စနစ်ကို နောက်ပိုင်းတွင် ထည့်သွင်းပေးပါမည်။</p>
+    <div class="auth-card" id="auth-box">
+        <div id="reg-form">
+            <h2 style="color: var(--c1);">REGISTER</h2>
+            <div class="input-box"><i class="fas fa-user"></i><input type="text" id="name" placeholder="နာမည်"></div>
+            <div class="input-box"><i class="fas fa-phone"></i><input type="text" id="phone" placeholder="ဖုန်းနံပါတ်"></div>
+            <div class="input-box"><i class="fas fa-envelope"></i><input type="email" id="email" placeholder="Gmail"></div>
+            <div class="input-box"><i class="fas fa-lock"></i><input type="password" id="pass" placeholder="Password"></div>
+            <button class="btn" onclick="register()">REGISTER NOW</button>
+            <span class="toggle-link" onclick="toggleAuth(true)">အကောင့်ရှိပြီးသားလား? Login ဝင်ရန်</span>
+        </div>
+
+        <div id="login-form" style="display:none;">
+            <h2 style="color: var(--c2);">LOGIN</h2>
+            <div class="input-box"><i class="fas fa-phone"></i><input type="text" id="l-phone" placeholder="ဖုန်းနံပါတ်"></div>
+            <div class="input-box"><i class="fas fa-lock"></i><input type="password" id="l-pass" placeholder="Password"></div>
+            <button class="btn" style="background: var(--c2);" onclick="login()">LOGIN NOW</button>
+            <span class="toggle-link" onclick="toggleAuth(false)">အကောင့်မရှိသေးဘူးလား? Register လုပ်ရန်</span>
+        </div>
     </div>
 
     <script>
         const socket = io();
 
-        function register() {
-            const btn = document.getElementById('join-btn');
-            
-            // ID များကို သေသေချာချာ ဆွဲယူခြင်း
-            const name = document.getElementById('name').value.trim();
-            const phone = document.getElementById('phone').value.trim();
-            const email = document.getElementById('email').value.trim();
-            const pass = document.getElementById('pass').value.trim();
-
-            // အချက်အလက် အားလုံးရှိမရှိ စစ်ဆေးခြင်း
-            if(!name || !phone || !email || !pass) {
-                return alert("အချက်အလက်အစုံဖြည့်ပါ");
-            }
-
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-
-            socket.emit('register_user', {
-                name: name,
-                phone: phone,
-                email: email,
-                password: pass
-            });
+        function toggleAuth(isLogin) {
+            document.getElementById('reg-form').style.display = isLogin ? 'none' : 'block';
+            document.getElementById('login-form').style.display = isLogin ? 'block' : 'none';
         }
 
-        socket.on('register_success', () => {
-            alert("အကောင့်ဖွင့်ခြင်း အောင်မြင်ပါသည်!");
-            location.reload(); 
-        });
+        function register() {
+            const data = {
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('pass').value
+            };
+            if(!data.name || !data.phone || !data.pass) return alert("အချက်အလက်အစုံဖြည့်ပါ");
+            socket.emit('register_user', data);
+        }
 
-        socket.on('error_msg', (msg) => {
-            alert(msg);
-            const btn = document.getElementById('join-btn');
-            btn.disabled = false;
-            btn.innerHTML = "REGISTER NOW";
+        function login() {
+            const phone = document.getElementById('l-phone').value;
+            const password = document.getElementById('l-pass').value;
+            if(!phone || !password) return alert("ဖုန်းနှင့် Password ဖြည့်ပါ");
+            socket.emit('login_user', { phone, password });
+        }
+
+        socket.on('register_success', () => { alert("အကောင့်ဖွင့်ခြင်း အောင်မြင်ပါသည်!"); toggleAuth(true); });
+        socket.on('login_success', (user) => { 
+            localStorage.setItem('user', JSON.stringify(user));
+            window.location.href = 'dashboard.html'; 
         });
+        socket.on('error_msg', (msg) => alert(msg));
     </script>
 </body>
 </html>

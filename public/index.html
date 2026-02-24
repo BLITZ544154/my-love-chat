@@ -1,70 +1,156 @@
 <!DOCTYPE html>
-<html>
+<html lang="my">
 <head>
-    <title>❤️ Our Space</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streamer Hub</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
-        body { font-family: sans-serif; background: #fdf2f8; margin: 0; padding: 15px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
-        #messages { list-style: none; padding: 0; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-        .msg { padding: 10px; border-radius: 15px; max-width: 80%; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .mine { align-self: flex-end; background: #ec4899; color: white; }
-        .others { align-self: flex-start; background: white; color: #333; }
-        #form { display: flex; gap: 8px; padding: 10px 0; }
-        input { flex-grow: 1; padding: 12px; border-radius: 25px; border: 1px solid #ddd; outline: none; }
-        button { padding: 0 20px; border-radius: 25px; border: none; background: #ec4899; color: white; cursor: pointer; font-weight: bold; }
+        :root { --main: #ec4899; --dark: #333; --bg: #f8fafc; }
+        body { font-family: sans-serif; margin: 0; background: var(--bg); overflow: hidden; }
+        .screen { display: none; height: 100vh; flex-direction: column; }
+        .active { display: flex; }
+
+        /* Auth UI */
+        #auth-screen { justify-content: center; align-items: center; padding: 20px; }
+        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 320px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
+        .btn { background: var(--main); color: white; border: none; padding: 12px; border-radius: 10px; width: 100%; cursor: pointer; font-weight: bold; }
+
+        /* Home UI */
+        #home-content { padding: 20px; overflow-y: auto; flex-grow: 1; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .stat-box { background: white; padding: 15px; border-radius: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .live-card { background: #fee2e2; border-left: 5px solid #ef4444; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-decoration: none; color: #b91c1c; display: block; }
+        .social-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .social-btn { padding: 10px; border-radius: 10px; text-align: center; color: white; text-decoration: none; font-size: 12px; font-weight: bold; }
+
+        /* Bottom Nav */
+        .nav-bar { display: flex; background: white; border-top: 1px solid #eee; padding: 10px; justify-content: space-around; }
+        .nav-item { border: none; background: none; font-size: 20px; cursor: pointer; color: #999; }
+        .nav-active { color: var(--main); }
+
+        /* Chat UI */
+        #chat-area { flex-grow: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { padding: 8px 15px; border-radius: 15px; max-width: 70%; word-wrap: break-word; }
+        .mine { align-self: flex-end; background: var(--main); color: white; }
+        .others { align-self: flex-start; background: #eee; color: #333; }
     </style>
 </head>
 <body>
-    <ul id="messages"></ul>
-    <form id="form">
-        <input id="input" autocomplete="off" placeholder="စာရိုက်ပါ..." />
-        <button type="submit">Send</button>
-    </form>
 
-    <script src="/socket.io/socket.io.js"></script>
+    <div id="auth-screen" class="screen active">
+        <div class="card" id="login-form">
+            <h2 style="color: var(--main);">Login</h2>
+            <input type="text" id="phone" placeholder="ဖုန်းနံပါတ်">
+            <input type="password" id="pass" placeholder="Password">
+            <button class="btn" onclick="login()">ဝင်မည်</button>
+            <p style="font-size: 12px; margin-top: 15px;">အကောင့်မရှိသေးရင် <a href="#" onclick="showRegister()">ဒီမှာဖွင့်ပါ</a></p>
+        </div>
+        <div class="card" id="reg-form" style="display: none;">
+            <h2 style="color: var(--main);">Register</h2>
+            <input type="text" id="reg-name" placeholder="နာမည်">
+            <input type="text" id="reg-phone" placeholder="ဖုန်းနံပါတ်">
+            <input type="password" id="reg-pass" placeholder="Password">
+            <button class="btn" onclick="register()">အကောင့်ဖွင့်မည်</button>
+            <p style="font-size: 12px; margin-top: 15px;"><a href="#" onclick="showLogin()">Login ပြန်ဝင်မည်</a></p>
+        </div>
+    </div>
+
+    <div id="main-screen" class="screen">
+        <div id="tab-home" class="tab-content" style="flex-grow:1; overflow-y:auto;">
+            <div id="home-content">
+                <div class="stats-grid">
+                    <div class="stat-box">🪙 <br> <span id="u-points">0</span> Points</div>
+                    <div class="stat-box">❤️ <br> <span id="rs-timer">No RS</span></div>
+                </div>
+
+                <a href="https://facebook.com/yourpage" target="_blank" class="live-card">
+                    <strong>🔴 Live Now!</strong><br>Facebook မှာ လွှင့်နေပါတယ် ဝင်ကြည့်ပေးပါဦး!
+                </a>
+
+                <h3>Social Media</h3>
+                <div class="social-links">
+                    <a href="#" class="social-btn" style="background:#1877F2">FB</a>
+                    <a href="#" class="social-btn" style="background:#000">TikTok</a>
+                    <a href="#" class="social-btn" style="background:#FF0000">YT</a>
+                </div>
+
+                <button class="btn" style="margin-top:20px;" onclick="checkIn()">🎁 Daily Check-in (+50 Pts)</button>
+            </div>
+        </div>
+
+        <div id="tab-chat" class="tab-content" style="display:none; flex-grow:1; flex-direction:column; overflow:hidden;">
+            <div id="chat-area"></div>
+            <div style="padding:10px; display:flex; gap:5px; background:white;">
+                <input id="chat-input" placeholder="စာရိုက်ပါ..." style="margin:0;">
+                <button class="btn" style="width:auto; padding:0 20px;" onclick="sendMsg()">Send</button>
+            </div>
+        </div>
+
+        <div class="nav-bar">
+            <button class="nav-item nav-active" onclick="showTab('home', this)">🏠</button>
+            <button class="nav-item" onclick="showTab('chat', this)">💬</button>
+            <button class="nav-item" onclick="alert('Setting Page Coming Soon!')">⚙️</button>
+        </div>
+    </div>
+
     <script>
         const socket = io();
-        const messages = document.getElementById('messages');
-        const form = document.getElementById('form');
-        const input = document.getElementById('input');
+        let user = null;
 
-        console.log("Attempting to connect..."); // ဒါ Console မှာ ပြရမယ်
+        function showRegister() { document.getElementById('login-form').style.display='none'; document.getElementById('reg-form').style.display='block'; }
+        function showLogin() { document.getElementById('login-form').style.display='block'; document.getElementById('reg-form').style.display='none'; }
 
-        let myName = localStorage.getItem('chat-name') || prompt("သင့်နာမည်:");
-        if(!myName) myName = "User";
-        localStorage.setItem('chat-name', myName);
+        function register() {
+            const name = document.getElementById('reg-name').value;
+            const phone = document.getElementById('reg-phone').value;
+            const password = document.getElementById('reg-pass').value;
+            socket.emit('register', { name, phone, password });
+        }
 
-        socket.on('connect', () => {
-            console.log("Successfully connected to server! ✅");
+        function login() {
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('pass').value;
+            socket.emit('login', { phone, password });
+        }
+
+        socket.on('register_success', () => { alert("အကောင့်ဖွင့်ပြီးပါပြီ! Login ဝင်ပါ"); showLogin(); });
+        socket.on('login_success', (uData) => {
+            user = uData;
+            document.getElementById('auth-screen').classList.remove('active');
+            document.getElementById('main-screen').classList.add('active');
+            document.getElementById('u-points').innerText = user.points;
         });
 
-        socket.on('load messages', (msgs) => {
-            console.log("Loading old messages:", msgs.length);
-            messages.innerHTML = '';
-            msgs.forEach(displayMsg);
-        });
+        socket.on('error_msg', (msg) => alert(msg));
+        socket.on('update_user', (uData) => { user = uData; document.getElementById('u-points').innerText = user.points; });
 
-        socket.on('chat message', (msg) => {
-            console.log("New message received:", msg);
-            displayMsg(msg);
-        });
+        function showTab(tab, btn) {
+            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('nav-active'));
+            document.getElementById('tab-' + tab).style.display = tab === 'chat' ? 'flex' : 'block';
+            btn.classList.add('nav-active');
+        }
 
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            if (input.value) {
-                console.log("Sending message...");
-                socket.emit('chat message', { user: myName, text: input.value });
+        function checkIn() { socket.emit('daily_checkin', user.phone); }
+
+        function sendMsg() {
+            const input = document.getElementById('chat-input');
+            if(input.value) {
+                socket.emit('chat message', { user: user.name, text: input.value });
                 input.value = '';
             }
-        });
-
-        function displayMsg(msg) {
-            const li = document.createElement('li');
-            li.className = `msg ${msg.user === myName ? 'mine' : 'others'}`;
-            li.innerHTML = `<strong>${msg.user}:</strong> ${msg.text}`;
-            messages.appendChild(li);
-            messages.scrollTop = messages.scrollHeight;
         }
+
+        socket.on('chat message', (msg) => {
+            const area = document.getElementById('chat-area');
+            const div = document.createElement('div');
+            div.className = `msg ${msg.user === user.name ? 'mine' : 'others'}`;
+            div.innerHTML = `<small>${msg.user}</small><br>${msg.text}`;
+            area.appendChild(div);
+            area.scrollTop = area.scrollHeight;
+        });
     </script>
 </body>
 </html>

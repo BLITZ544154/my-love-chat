@@ -3,32 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLITZ Login</title>
+    <title>BLITZ | Community</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;900&family=Syncopate:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root { --c1:#00f2ff; --c2:#ff0055; --bg:#050508; }
-        body { font-family: sans-serif; background: var(--bg); color: #fff; margin:0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .auth-card { background: rgba(20,20,30,0.95); padding: 40px 25px; border-radius: 30px; border: 2px solid var(--c1); text-align: center; width: 90%; max-width: 380px; }
-        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #333; background: #000; color: #fff; text-align: center; font-size: 16px; }
-        .btn { background: linear-gradient(45deg, var(--c1), var(--c2)); border: none; padding: 16px; border-radius: 12px; color: #fff; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; }
-        .btn:disabled { opacity: 0.5; }
+        :root { 
+            --c1: #00f2ff; 
+            --c2: #ff0055; 
+            --bg: #050508; 
+            --glass: rgba(255, 255, 255, 0.03);
+        }
+
+        * { box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        
+        body { 
+            margin: 0; 
+            background: var(--bg); 
+            background-image: radial-gradient(circle at 50% 50%, #101015 0%, #050508 100%);
+            color: #fff; 
+            height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            overflow: hidden;
+        }
+
+        /* Animated Background Stars */
+        .bg-glow {
+            position: fixed;
+            width: 300px; height: 300px;
+            background: var(--c1);
+            filter: blur(150px);
+            opacity: 0.1;
+            z-index: -1;
+            animation: float 10s infinite alternate;
+        }
+
+        @keyframes float { from { transform: translate(-50%, -50%); } to { transform: translate(50%, 50%); } }
+
+        .auth-card { 
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(20px);
+            padding: 40px 30px; 
+            border-radius: 40px; 
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center; 
+            width: 90%; 
+            max-width: 400px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Top Border Animation */
+        .auth-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, transparent, var(--c1), var(--c2), transparent);
+            animation: moveBorder 3s linear infinite;
+        }
+
+        @keyframes moveBorder { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+        h2 { 
+            font-family: 'Syncopate', sans-serif;
+            font-size: 24px;
+            letter-spacing: 5px;
+            background: linear-gradient(to right, var(--c1), var(--c2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+        }
+
+        .input-group { position: relative; margin-bottom: 15px; }
+        .input-group i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #555; }
+
+        input { 
+            width: 100%; 
+            padding: 16px 16px 16px 45px; 
+            border-radius: 15px; 
+            border: 1px solid rgba(255,255,255,0.1); 
+            background: var(--glass); 
+            color: #fff; 
+            font-size: 15px;
+            transition: 0.3s;
+        }
+
+        input:focus { 
+            border-color: var(--c1); 
+            background: rgba(255,255,255,0.07);
+            outline: none;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+        }
+
+        .btn { 
+            background: linear-gradient(45deg, var(--c1), var(--c2)); 
+            border: none; 
+            padding: 16px; 
+            border-radius: 15px; 
+            color: #fff; 
+            font-weight: 700; 
+            width: 100%; 
+            cursor: pointer; 
+            margin-top: 15px;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 10px 20px -5px rgba(255, 0, 85, 0.3);
+            transition: 0.3s;
+        }
+
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 15px 25px -5px rgba(255, 0, 85, 0.4); }
+        .btn:active { transform: translateY(0); }
+        .btn:disabled { opacity: 0.5; filter: grayscale(1); }
+
+        #otp-section { 
+            margin-top: 25px; 
+            padding-top: 20px; 
+            border-top: 1px dashed rgba(255,255,255,0.1);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .footer-text { font-size: 13px; margin-top: 25px; color: #666; }
+        .footer-text span { color: var(--c1); cursor: pointer; font-weight: 600; }
     </style>
 </head>
 <body>
 
-    <div class="auth-card" id="reg-form">
-        <h2 style="color:var(--c1)">REGISTER</h2>
-        <input type="text" id="reg-name" placeholder="သင့်နာမည်">
-        <input type="text" id="reg-phone" placeholder="ဖုန်းနံပါတ်">
-        <input type="email" id="reg-email" placeholder="Gmail လိပ်စာ">
-        <input type="password" id="reg-pass" placeholder="Password">
-        <button class="btn" id="reg-btn" onclick="requestOTP()">GET OTP</button>
+    <div class="bg-glow"></div>
 
-        <div id="otp-section" style="display:none; margin-top:20px; border-top:1px solid #333; padding-top:10px;">
-            <input type="text" id="otp-input" placeholder="OTP ၆ လုံး ရိုက်ပါ">
-            <button class="btn" onclick="verifyOTP()">VERIFY & REGISTER</button>
+    <div class="auth-card" id="reg-form">
+        <h2>REGISTER</h2>
+        
+        <div class="input-group">
+            <i class="fas fa-user"></i>
+            <input type="text" id="reg-name" placeholder="သင့်နာမည်">
         </div>
+
+        <div class="input-group">
+            <i class="fas fa-phone"></i>
+            <input type="text" id="reg-phone" placeholder="ဖုန်းနံပါတ်">
+        </div>
+
+        <div class="input-group">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="reg-email" placeholder="Gmail လိပ်စာ">
+        </div>
+
+        <div class="input-group">
+            <i class="fas fa-lock"></i>
+            <input type="password" id="reg-pass" placeholder="Password">
+        </div>
+        
+        <button class="btn" id="reg-btn" onclick="requestOTP()">
+            <i class="fas fa-paper-plane" style="margin-right: 8px;"></i> GET OTP
+        </button>
+
+        <div id="otp-section" style="display:none;">
+            <p style="font-size: 12px; color: var(--c1); margin-bottom: 10px;">Email ထဲသို့ OTP ပို့လိုက်ပါပြီ</p>
+            <div class="input-group">
+                <i class="fas fa-key"></i>
+                <input type="text" id="otp-input" placeholder="OTP ၆ လုံး ရိုက်ပါ">
+            </div>
+            <button class="btn" onclick="verifyOTP()" style="background: var(--c1); color: #000;">VERIFY NOW</button>
+        </div>
+        
+        <p class="footer-text">
+            အကောင့်ရှိပြီးသားလား? <span onclick="showLogin()">Login ဝင်မည်</span>
+        </p>
     </div>
 
     <script>
@@ -36,32 +182,36 @@
         const regBtn = document.getElementById('reg-btn');
 
         function requestOTP() {
-            const data = {
+            const email = document.getElementById('reg-email').value;
+            if(!email.includes('@')) return alert("Gmail မှန်အောင် ရိုက်ပါဗျာ");
+
+            regBtn.disabled = true;
+            regBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Sending...';
+            
+            socket.emit('request_otp', {
                 name: document.getElementById('reg-name').value,
                 phone: document.getElementById('reg-phone').value,
-                email: document.getElementById('reg-email').value,
+                email: email,
                 password: document.getElementById('reg-pass').value
-            };
-            if(!data.email.includes('@')) return alert("Gmail မှန်အောင် ရိုက်ပါ");
-            
-            regBtn.disabled = true;
-            regBtn.innerHTML = "Sending OTP...";
-            socket.emit('request_otp', data);
+            });
         }
 
         socket.on('otp_sent', () => {
-            alert("OTP ပို့ပြီးပါပြီ!");
             document.getElementById('otp-section').style.display = 'block';
-            regBtn.innerHTML = "OTP Sent ✅";
+            regBtn.innerHTML = 'OTP Sent <i class="fas fa-check"></i>';
         });
 
-        socket.on('register_success', () => { alert("Register အောင်မြင်ပါသည်!"); location.reload(); });
-        socket.on('error_msg', (msg) => { alert(msg); regBtn.disabled = false; regBtn.innerHTML = "GET OTP"; });
-        
+        socket.on('error_msg', (msg) => {
+            alert(msg);
+            regBtn.disabled = false;
+            regBtn.innerHTML = 'GET OTP';
+        });
+
         function verifyOTP() {
-            const email = document.getElementById('reg-email').value;
-            const otp = document.getElementById('otp-input').value;
-            socket.emit('verify_otp', { email, otp });
+            socket.emit('verify_otp', { 
+                email: document.getElementById('reg-email').value, 
+                otp: document.getElementById('otp-input').value 
+            });
         }
     </script>
 </body>

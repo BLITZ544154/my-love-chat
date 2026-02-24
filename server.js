@@ -18,15 +18,15 @@ const User = mongoose.model('User', new mongoose.Schema({
     phone: String, email: String, password: String, name: String, points: { type: Number, default: 0 }
 }));
 
-// Gmail Setup (Space ဖြုတ်ထားတဲ့ vtzkyjrzsmsavnyr ကို သုံးထားတယ်)
+// Gmail Setup (Updated with your new App Password)
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     host: 'smtp.gmail.com',
     port: 465,
     secure: true,
     auth: {
-        user: 'stunchou493@gmail.com',
-        pass: 'vtzkyjrzsmsavnyr' 
+        user: 'stunchou493@gmail.com', //
+        pass: 'tovmlaupjjudauce'    // 👈 ခင်ဗျားပေးတဲ့ ကုဒ်အသစ်
     }
 });
 
@@ -43,14 +43,14 @@ io.on('connection', (socket) => {
         const mailOptions = {
             from: '"BLITZ Support" <stunchou493@gmail.com>',
             to: data.email,
-            subject: 'Your OTP Code',
+            subject: 'BLITZ App OTP Code',
             text: `မင်္ဂလာပါ ${data.name}၊ အကောင့်ဖွင့်ရန် OTP မှာ ${otp} ဖြစ်သည်။`
         };
 
         transporter.sendMail(mailOptions, (err) => {
             if (err) {
-                console.log(err);
-                socket.emit('error_msg', "Email ပို့လို့မရပါဘူး။ Gmail App Password ကို ပြန်စစ်ပါ။");
+                console.log("MAIL ERROR:", err.message);
+                socket.emit('error_msg', "Email ပို့လို့မရပါဘူး။ Gmail App Password ကို ပြန်စစ်ပါ။"); //
             } else {
                 socket.emit('otp_sent');
             }
@@ -75,10 +75,10 @@ io.on('connection', (socket) => {
         if (user && await bcrypt.compare(data.password, user.password)) {
             socket.emit('login_success', user);
         } else {
-            socket.emit('error_msg', "အချက်အလက် မှားယွင်းနေပါသည်။");
+            socket.emit('error_msg', "ဖုန်း သို့မဟုတ် Password မှားနေသည်။");
         }
     });
 });
 
 const PORT = process.env.PORT || 10000;
-server.listen(PORT, '0.0.0.0', () => console.log(`Live on ${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`Server running on ${PORT}`));

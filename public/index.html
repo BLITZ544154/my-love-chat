@@ -1,105 +1,60 @@
 <!DOCTYPE html>
-<html lang="my">
+<html>
 <head>
-    <meta charset="UTF-8">
+    <title>Our Love Chat</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Our Private Chat ❤️</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #e5ddd5; margin: 0; }
-        #chat-container { max-width: 600px; margin: auto; height: 100vh; display: flex; flex-direction: column; background: #fff; }
-        
-        header { background: #075e54; color: white; padding: 15px; text-align: center; font-weight: bold; }
-        
-        #messages { flex: 1; overflow-y: auto; padding: 20px; list-style: none; display: flex; flex-direction: column; }
-        
-        .msg { margin-bottom: 10px; padding: 10px 15px; border-radius: 15px; max-width: 70%; word-wrap: break-word; position: relative; }
-        .received { background: #fff; align-self: flex-start; border-bottom-left-radius: 2px; }
-        .sent { background: #dcf8c6; align-self: flex-end; border-bottom-right-radius: 2px; }
-        
-        .img-msg { max-width: 100%; border-radius: 10px; margin-top: 5px; cursor: pointer; }
-        
-        #input-area { display: flex; padding: 10px; background: #f0f0f0; gap: 10px; align-items: center; }
-        input[type="text"] { flex: 1; padding: 12px; border: none; border-radius: 25px; outline: none; }
-        
-        .btn { cursor: pointer; font-size: 20px; border: none; background: none; }
-        #send-btn { color: #075e54; font-weight: bold; }
-        #image-input { display: none; }
+        body { font-family: sans-serif; margin: 0; padding-bottom: 3rem; background: #fdf2f8; }
+        #form { background: rgba(0, 0, 0, 0.15); padding: 0.25rem; position: fixed; bottom: 0; left: 0; right: 0; display: flex; height: 3rem; box-sizing: border-box; backdrop-filter: blur(10px); }
+        #input { border: none; padding: 0 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem; }
+        #input:focus { outline: none; }
+        #form > button { background: #ec4899; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 3px; outline: none; color: #fff; cursor: pointer; }
+        #messages { list-style-type: none; margin: 0; padding: 0; }
+        #messages > li { padding: 0.5rem 1rem; background: white; margin: 5px; border-radius: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
-
-<header>Our Private Chat ❤️</header>
-
-<div id="chat-container">
     <ul id="messages"></ul>
-    
-    <div id="input-area">
-        <label for="image-input" class="btn">📷</label>
-        <input type="file" id="image-input" accept="image/*">
-        
-        <input type="text" id="text-input" placeholder="စာရိုက်ပါ..." autocomplete="off">
-        <button id="send-btn" class="btn">ပို့မည်</button>
-    </div>
-</div>
+    <form id="form" action="">
+        <input id="input" autocomplete="off" placeholder="စာရိုက်ပါ..." /><button>Send</button>
+    </form>
 
-<script src="/socket.io/socket.io.js"></script>
-<script>
-    const socket = io();
-    const msgList = document.getElementById('messages');
-    const textInput = document.getElementById('text-input');
-    const imageInput = document.getElementById('image-input');
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const form = document.getElementById('form');
+        const input = document.getElementById('input');
+        const messages = document.getElementById('messages');
 
-    // စာပို့ရန်
-    document.getElementById('send-btn').onclick = () => {
-        if(textInput.value) {
-            socket.emit('chat message', { content: textInput.value });
-            textInput.value = '';
+        // နာမည်မေးမယ် (ယာယီ)
+        const username = prompt("သင့်နာမည်ကို ရိုက်ထည့်ပါ:") || "Anonymous";
+
+        // စာဟောင်းတွေကို Database ကနေ ပြန်ပြမယ်
+        socket.on('load messages', (msgs) => {
+            msgs.forEach(msg => {
+                displayMessage(msg);
+            });
+            window.scrollTo(0, document.body.scrollHeight);
+        });
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (input.value) {
+                socket.emit('chat message', { user: username, text: input.value });
+                input.value = '';
+            }
+        });
+
+        socket.on('chat message', (msg) => {
+            displayMessage(msg);
+            window.scrollTo(0, document.body.scrollHeight);
+        });
+
+        function displayMessage(msg) {
+            const item = document.createElement('li');
+            item.innerHTML = `<strong>${msg.user}:</strong> ${msg.text}`;
+            messages.appendChild(item);
         }
-    };
-
-    // Enter ခေါက်ရင် စာပို့ဖို့
-    textInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') document.getElementById('send-btn').click();
-    });
-
-    // ပုံပို့ရန်
-    imageInput.onchange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                socket.emit('send image', { content: event.target.result });
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
-    // စာသားများကို ပြသရန်
-    socket.on('chat message', (data) => {
-        appendMessage(data.content, 'text');
-    });
-
-    // ပုံများကို ပြသရန်
-    socket.on('display image', (data) => {
-        appendMessage(data.content, 'image');
-    });
-
-    function appendMessage(content, type) {
-        const li = document.createElement('li');
-        li.className = 'msg received'; // လောလောဆယ် အကုန်ဘယ်ဘက်ကပ်ပြမယ်
-        
-        if (type === 'text') {
-            li.textContent = content;
-        } else {
-            const img = document.createElement('img');
-            img.src = content;
-            img.className = 'img-msg';
-            li.appendChild(img);
-        }
-        
-        msgList.appendChild(li);
-        msgList.scrollTop = msgList.scrollHeight;
-    }
-</script>
+    </script>
 </body>
 </html>

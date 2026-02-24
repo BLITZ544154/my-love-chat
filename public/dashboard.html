@@ -3,72 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>GLOW Z-SPACE</title>
+    <title>GLOW Z-SPACE | Premium</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root { --c1:#00f2ff; --c2:#ff0055; --bg:#050508; }
-        body { margin:0; background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; text-align:center; }
-        .card { background:#111; margin:20px; padding:30px; border-radius:30px; border:1px solid #222; }
-        .p-img { width:110px; height:110px; border-radius:50%; border:3px solid var(--c1); margin:auto; overflow:hidden; }
+        body { margin:0; background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; overflow-x:hidden; }
+        
+        /* Premium Background Effects */
+        .premium-bg-glow { background: radial-gradient(circle at center, rgba(0,242,255,0.15) 0%, var(--bg) 70%) !important; border: 1px solid var(--c1) !important; box-shadow: 0 0 20px rgba(0,242,255,0.2); }
+        .premium-bg-fire { background: radial-gradient(circle at center, rgba(255,0,85,0.15) 0%, var(--bg) 70%) !important; border: 1px solid var(--c2) !important; box-shadow: 0 0 20px rgba(255,0,85,0.2); }
+        
+        .container { padding: 20px; max-width: 500px; margin: auto; }
+        .profile-card { background: #111; padding: 30px; border-radius: 35px; border: 1px solid #222; text-align: center; transition: 0.5s; }
+        
+        .p-img { width:110px; height:110px; border-radius:50%; border:3px solid var(--c1); margin:auto; overflow:hidden; position: relative; }
         .p-img img { width:100%; height:100%; object-fit:cover; }
-        .badge { font-size:10px; background:linear-gradient(45deg, var(--c1), var(--c2)); padding:4px 10px; border-radius:10px; margin:5px; font-weight:bold; }
-        .points-box { background:rgba(0,242,255,0.1); padding:12px; border-radius:15px; margin:15px 0; color:var(--c1); font-weight:600; border:1px solid rgba(0,242,255,0.2); }
-        .menu-grid { display:grid; grid-template-columns:1fr 1fr; gap:15px; padding:20px; }
-        .menu-item { background:#111; padding:20px; border-radius:20px; border:1px solid #222; cursor:pointer; }
-        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:100; justify-content:center; align-items:center; }
-        input[type="text"] { width:90%; padding:12px; margin:10px; background:#000; border:1px solid #333; color:#fff; border-radius:10px; }
+        
+        /* Neon Name Colors */
+        .name-gold { color: #ffd700 !important; text-shadow: 0 0 10px #ffd700; font-weight: 900; }
+        .name-neon { color: var(--c1) !important; text-shadow: 0 0 10px var(--c1); font-weight: 900; }
+
+        .badge-list { display: flex; justify-content: center; gap: 5px; margin: 10px 0; flex-wrap: wrap; }
+        .badge-tag { font-size: 10px; background: #222; padding: 4px 10px; border-radius: 10px; border: 1px solid #444; }
+
+        .points-display { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 15px; margin: 15px 0; border: 1px solid #222; }
+        
+        .btn-action { width: 100%; padding: 15px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
+        .btn-store { background: linear-gradient(45deg, var(--c1), var(--c2)); color: #fff; }
+
+        /* Store Modal Styling */
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:1000; overflow-y: auto; padding: 20px 0; }
+        .store-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
+        .store-item { background: #18181b; padding: 15px; border-radius: 20px; border: 1px solid #222; text-align: center; }
+        .price { color: var(--c1); font-size: 13px; font-weight: bold; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-    <div style="padding:20px; display:flex; justify-content:space-between; border-bottom:1px solid #222;">
-        <span style="font-weight:700; color:var(--c1);">GLOW <span style="color:var(--c2)">Z-SPACE</span></span>
-        <i class="fas fa-bell"></i>
-    </div>
-
-    <div class="card">
-        <div class="p-img"><img src="B L I T Z.jpg" id="user-pic"></div>
-        <div id="badge-area"></div>
-        <h2 id="u-name">Toe Tat Aung</h2>
-        <div class="points-box"><i class="fas fa-coins"></i> Points: <span id="u-points">0</span></div>
-        <button onclick="openEdit()" style="background:#222; border:1px solid #444; color:#fff; padding:8px 20px; border-radius:20px;">EDIT PROFILE</button>
-    </div>
-
-    <div class="menu-grid">
-        <div class="menu-item" onclick="window.open('https://blitz1224.github.io/blitz-links/', '_blank'); completeMission(500);">
-            <i class="fas fa-tasks" style="color:var(--c1)"></i><br>Missions
-        </div>
-        <div class="menu-item" onclick="openStore()">
-            <i class="fas fa-gem" style="color:#ffd700"></i><br>Store
-        </div>
-        <div class="menu-item" onclick="location.href='chat.html'">
-            <i class="fas fa-comments" style="color:var(--c2)"></i><br>Chat Room
-        </div>
-        <div class="menu-item" onclick="logout()">
-            <i class="fas fa-sign-out-alt"></i><br>Logout
+    <div class="container">
+        <div class="profile-card" id="main-card">
+            <div class="p-img"><img src="B L I T Z.jpg" id="user-pic"></div>
+            <div class="badge-list" id="user-badges"></div>
+            <h2 id="user-name">Loading...</h2>
+            <div class="points-display"><i class="fas fa-coins" style="color:#ffd700"></i> Points: <span id="user-points">0</span></div>
+            
+            <button class="btn-action btn-store" onclick="openStore()"><i class="fas fa-gem"></i> GO TO STORE</button>
+            <button class="btn-action" style="background:#222; color:#fff;" onclick="location.href='chat.html'">CHAT ROOM</button>
         </div>
     </div>
 
     <div id="storeModal" class="modal">
-        <div style="background:#111; padding:25px; border-radius:25px; width:85%; border:1px solid var(--c1);">
-            <h3 style="color:var(--c1)">KPAY TOP-UP</h3>
-            <p style="font-size:12px;">Toe Tat Aung: <b>09692593288</b></p>
-            <hr border="0" style="border-top:1px solid #333;">
-            <p style="font-size:11px; color:#888;">ငွေလွှဲပြီး Screenshot တင်ပေးပါ</p>
-            <input type="file" id="payImg" style="font-size:11px; margin:10px 0;">
-            <button onclick="submitPay()" style="width:100%; padding:12px; background:var(--c1); border:none; border-radius:10px; font-weight:600;">SUBMIT SCREENSHOT</button>
-            <button onclick="closeStore()" style="background:none; border:none; color:#666; margin-top:10px;">Close</button>
-        </div>
-    </div>
+        <div class="container">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2 style="color:var(--c1)">GLOW STORE</h2>
+                <i class="fas fa-times" onclick="closeStore()" style="font-size:24px; cursor:pointer;"></i>
+            </div>
 
-    <div id="editModal" class="modal">
-        <div style="background:#111; padding:25px; border-radius:25px; width:85%; border:1px solid var(--c1);">
-            <input type="file" id="newPic" accept="image/*">
-            <input type="text" id="newBio" placeholder="Bio">
-            <button onclick="saveProfile()" style="width:100%; padding:12px; background:var(--c1); border:none; border-radius:10px;">SAVE CHANGES</button>
-            <button onclick="closeEdit()" style="background:none; border:none; color:#666; margin-top:10px;">Cancel</button>
+            <h3 style="font-size:14px; color:#888;">PREMIUM BADGES</h3>
+            <div class="store-grid">
+                <div class="store-item" onclick="buyItem('badge', 'SUPREME', 50000)">
+                    <span style="font-size:24px;">💎</span><br>SUPREME<br><div class="price">50,000 P</div>
+                </div>
+                <div class="store-item" onclick="buyItem('badge', 'LEGEND', 30000)">
+                    <span style="font-size:24px;">🔥</span><br>LEGEND<br><div class="price">30,000 P</div>
+                </div>
+            </div>
+
+            <h3 style="font-size:14px; color:#888; margin-top:20px;">PROFILE EFFECTS</h3>
+            <div class="store-grid">
+                <div class="store-item" onclick="buyItem('effect', 'glow-bg', 20000)">
+                    ✨ Neon BG<br><div class="price">20,000 P</div>
+                </div>
+                <div class="store-item" onclick="buyItem('effect', 'gold-name', 15000)">
+                    👑 Gold Name<br><div class="price">15,000 P</div>
+                </div>
+            </div>
+
+            <div style="background:#111; padding:20px; border-radius:20px; margin-top:20px; border:1px dashed var(--c1);">
+                <p style="font-size:13px;">KPAY Top-up (Manual)</p>
+                <p style="font-size:16px; color:var(--c1); font-weight:bold;">09692593288</p>
+                <p style="font-size:11px; color:#666;">ငွေလွှဲပြီး Screenshot ပို့ရန်</p>
+            </div>
         </div>
     </div>
 
@@ -77,52 +94,62 @@
         let user = JSON.parse(localStorage.getItem('user'));
         const devPhone = '09688543022';
 
-        if(!user) location.href = 'index.html';
-
         function updateUI() {
-            if(user.phone === devPhone) { user.points = 999999; }
-            document.getElementById('u-name').innerText = user.name;
-            document.getElementById('u-points').innerText = user.points.toLocaleString();
-            document.getElementById('badge-area').innerHTML = user.phone === devPhone ? '<span class="badge">DEVELOPER</span><span class="badge" style="background:#ffaa00">VIP</span>' : '<span class="badge" style="background:#444">MEMBER</span>';
+            if(user.phone === devPhone) user.points = 999999;
+            
+            const nameEl = document.getElementById('user-name');
+            const cardEl = document.getElementById('main-card');
+            
+            nameEl.innerText = user.name;
+            document.getElementById('user-points').innerText = user.points.toLocaleString();
             if(user.profilePic) document.getElementById('user-pic').src = user.profilePic;
+
+            // Apply Effects
+            if(user.badges.includes('glow-bg')) cardEl.className = "profile-card premium-bg-glow";
+            if(user.badges.includes('gold-name')) nameEl.className = "name-gold";
+            
+            // Show Badges
+            let badgeHTML = '';
+            user.badges.forEach(b => {
+                if(!b.includes('-')) badgeHTML += `<span class="badge-tag">${b}</span>`;
+            });
+            document.getElementById('user-badges').innerHTML = badgeHTML || '<span class="badge-tag">No Badges</span>';
         }
 
         updateUI();
 
-        function openStore() { document.getElementById('storeModal').style.display='flex'; }
-        function closeStore() { document.getElementById('storeModal').style.display='none'; }
-        function openEdit() { document.getElementById('editModal').style.display='flex'; }
-        function closeEdit() { document.getElementById('editModal').style.display='none'; }
+        function openStore() { document.getElementById('storeModal').style.display = 'block'; }
+        function closeStore() { document.getElementById('storeModal').style.display = 'none'; }
 
-        function completeMission(pts) {
-            alert("Mission စတင်နေပါပြီ... ပြန်လာလျှင် Point ပေါင်းပေးပါမည်။");
-            socket.emit('complete_mission', { phone: user.phone, rewardPoints: pts });
-        }
-
-        function saveProfile() {
-            const file = document.getElementById('newPic').files[0];
-            const bio = document.getElementById('newBio').value;
-            if(file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    socket.emit('update_profile', { phone: user.phone, profilePic: e.target.result, bio: bio });
-                    closeEdit();
-                };
-                reader.readAsDataURL(file);
+        function buyItem(type, id, price) {
+            if(user.points < price) {
+                alert("Points မလုံလောက်ပါ။ Kpay နဲ့ အရင်ဖြည့်ပါ သားကြီး!");
+                return;
             }
-        }
+            if(user.badges.includes(id)) {
+                alert("ဒီ Item ကို ဝယ်ပြီးသားဖြစ်နေပါတယ်!");
+                return;
+            }
 
-        function submitPay() {
-            alert("Screenshot ပို့လိုက်ပါပြီ။ Admin စစ်ဆေးပြီး Point ထည့်ပေးပါလိမ့်မည်။");
-            closeStore();
+            if(confirm(`${id} ကို ${price} Points နဲ့ ဝယ်မှာလား?`)) {
+                user.points -= price;
+                user.badges.push(id);
+                // Update on server
+                socket.emit('update_profile', { 
+                    phone: user.phone, 
+                    points: user.points, 
+                    badges: user.badges 
+                });
+                alert("ဝယ်ယူမှု အောင်မြင်ပါသည်!");
+                updateUI();
+            }
         }
 
         socket.on('update_success', (data) => {
             localStorage.setItem('user', JSON.stringify(data));
-            user = data; updateUI();
+            user = data;
+            updateUI();
         });
-
-        function logout() { localStorage.clear(); location.href='index.html'; }
     </script>
 </body>
 </html>

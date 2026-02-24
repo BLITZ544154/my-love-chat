@@ -3,73 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLITZ | Home</title>
+    <title>GLOW Z-SPACE | Dashboard</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root { --c1: #00f2ff; --c2: #ff0055; --bg: #050508; }
-        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Outfit', sans-serif; overflow-x: hidden; }
-        
-        .navbar { 
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 20px; background: rgba(20, 20, 25, 0.9); backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(0, 242, 255, 0.2); position: sticky; top: 0; z-index: 100;
-        }
+        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Outfit', sans-serif; }
+        .navbar { display: flex; justify-content: space-between; padding: 20px; background: rgba(20,20,25,0.9); border-bottom: 1px solid var(--c1); }
         .logo { font-size: 22px; font-weight: 600; color: var(--c1); letter-spacing: 2px; }
-        
-        .container { padding: 25px; max-width: 500px; margin: auto; text-align: center; }
-        
-        .profile-section {
-            background: linear-gradient(135deg, rgba(0, 242, 255, 0.1), rgba(255, 0, 85, 0.1));
-            padding: 30px; border-radius: 30px; border: 1px solid rgba(255, 255, 255, 0.1);
-            margin-top: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        .profile-img { width: 80px; height: 80px; background: var(--c1); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 35px; color: #000; }
-
-        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px; }
-        .menu-item {
-            background: #111; padding: 20px; border-radius: 20px; border: 1px solid #222;
-            transition: 0.3s; cursor: pointer;
-        }
-        .menu-item:hover { border-color: var(--c1); transform: translateY(-5px); }
-        .menu-item i { font-size: 25px; color: var(--c2); margin-bottom: 10px; display: block; }
-        
-        .logout-btn { color: #ff4444; background: none; border: 1px solid #333; padding: 10px 20px; border-radius: 12px; cursor: pointer; margin-top: 30px; width: 100%; }
+        .container { padding: 20px; max-width: 500px; margin: auto; }
+        .profile-card { background: #111; padding: 30px; border-radius: 30px; border: 1px solid #222; text-align: center; }
+        .profile-img { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--c1); margin: 0 auto 15px; overflow: hidden; }
+        .profile-img img { width: 100%; height: 100%; object-fit: cover; }
+        .badge-box { margin: 10px 0; display: flex; justify-content: center; gap: 5px; }
+        .badge { font-size: 12px; background: var(--c2); padding: 3px 8px; border-radius: 10px; }
+        .stat-bar { background: #000; padding: 10px; border-radius: 15px; margin: 15px 0; color: var(--c1); border: 1px solid #222; }
+        .btn-edit { background: #222; border: 1px solid #444; color: #fff; padding: 8px 20px; border-radius: 20px; cursor: pointer; }
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; }
+        .menu-item { background: #111; padding: 20px; border-radius: 20px; border: 1px solid #222; text-align: center; }
     </style>
 </head>
 <body>
 
     <div class="navbar">
-        <div class="logo">BLITZ APP</div>
-        <i class="fas fa-bell" style="color: var(--c1);"></i>
+        <div class="logo">GLOW <span style="color:var(--c2)">Z-SPACE</span></div>
+        <div style="display:flex; gap:15px; color:var(--c1);">
+            <i class="fas fa-store"></i> <i class="fas fa-tasks"></i>
+        </div>
     </div>
 
     <div class="container">
-        <div class="profile-section">
-            <div class="profile-img"><i class="fas fa-user"></i></div>
-            <h2 id="user-name" style="margin: 0;">User Name</h2>
-            <p id="user-phone" style="color: #888; margin: 5px 0;">09xxxxxxxxx</p>
-            <div style="margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 15px;">
-                <span style="color: var(--c1);"><i class="fas fa-coins"></i> Points: 1000</span>
-            </div>
+        <div class="profile-card">
+            <div class="profile-img" id="p-img"><img src="https://via.placeholder.com/100" id="user-pic"></div>
+            <div class="badge-box" id="user-badges"><span class="badge">Z-NEWBIE</span></div>
+            <h2 id="display-name" style="margin:5px 0;">User Name</h2>
+            <p id="display-phone" style="color:#666; font-size:14px;">09xxxxxxxxx</p>
+            <div class="stat-bar"><i class="fas fa-coins"></i> Points: <span id="display-points">0</span></div>
+            <button class="btn-edit" onclick="editProfile()">EDIT PROFILE</button>
         </div>
 
         <div class="menu-grid">
-            <div class="menu-item"><i class="fas fa-comments"></i><span>Chat Room</span></div>
-            <div class="menu-item"><i class="fas fa-heart"></i><span>Matches</span></div>
-            <div class="menu-item"><i class="fas fa-gift"></i><span>Rewards</span></div>
-            <div class="menu-item"><i class="fas fa-cog"></i><span>Settings</span></div>
+            <div class="menu-item" onclick="location.href='chat.html'"><i class="fas fa-comments" style="color:var(--c1)"></i><br>Chat</div>
+            <div class="menu-item"><i class="fas fa-heart" style="color:var(--c2)"></i><br>Matches</div>
+            <div class="menu-item"><i class="fas fa-gift" style="color:#ffaa00"></i><br>Store</div>
+            <div class="menu-item" onclick="logout()"><i class="fas fa-sign-out-alt"></i><br>Logout</div>
         </div>
-
-        <button class="logout-btn" onclick="logout()">Logout <i class="fas fa-sign-out-alt"></i></button>
     </div>
 
     <script>
-        // Register အောင်မြင်တုန်းက နာမည်ကို ခဏပြရအောင် (လက်ရှိမှာတော့ static ပဲ ထားမယ်)
-        // နောက်ပိုင်းမှာ Login စနစ်နဲ့ ချိတ်ရင် ဒါက အလိုအလျောက် ပြောင်းသွားမှာပါ
-        function logout() {
-            window.location.href = 'index.html';
+        const socket = io();
+        let user = JSON.parse(localStorage.getItem('user'));
+
+        if(!user) location.href = 'index.html';
+
+        // Display User Info
+        document.getElementById('display-name').innerText = user.privacy.hideName ? "Hidden User" : user.name;
+        document.getElementById('display-phone').innerText = user.privacy.hidePhone ? "Phone Hidden" : user.phone;
+        document.getElementById('display-points').innerText = user.points;
+        if(user.profilePic) document.getElementById('user-pic').src = user.profilePic;
+
+        function editProfile() {
+            const newBio = prompt("သင့် Bio ကို ရေးပါ:", user.bio);
+            const newPic = prompt("Profile ပုံ URL ထည့်ပါ (ဥပမာ- https://...)");
+            const hPhone = confirm("ဖုန်းနံပါတ် ဖျောက်ထားမလား?");
+            
+            socket.emit('update_profile', {
+                phone: user.phone,
+                profilePic: newPic || user.profilePic,
+                bio: newBio || user.bio,
+                hidePhone: hPhone,
+                hideName: false
+            });
         }
+
+        socket.on('update_success', (updatedUser) => {
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            location.reload();
+        });
+
+        function logout() { localStorage.clear(); location.href = 'index.html'; }
     </script>
 </body>
 </html>

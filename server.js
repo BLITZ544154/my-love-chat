@@ -22,12 +22,13 @@ const io = new Server(server, {
     }
 });
 
-// Content Security Policy ကို Video Call အတွက် အကောင်းဆုံးပြင်ဆင်ထားသည်
+// CSP Fix: Inline scripts တွေ ခွင့်ပြုအောင် ပြင်ထားတယ်
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-            "script-src": ["'self'", "'unsafe-inline'", "https://unpkg.com"],
+            "script-src": ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://cdnjs.cloudflare.com"],
+            "script-src-attr": ["'self'", "'unsafe-inline'"], // ဒါက onclick="..." တွေအတွက် အရေးကြီးတယ်
             "img-src": ["'self'", "data:", "res.cloudinary.com", "via.placeholder.com", "https://api.dicebear.com"],
             "connect-src": ["'self'", "https://res.cloudinary.com", "wss://*", "https://assets.mixkit.co"],
             "media-src": ["'self'", "data:", "blob:", "https://assets.mixkit.co"],
@@ -115,7 +116,6 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Login failed" }); }
 });
 
-// User ရှာရန် API (New)
 app.get('/api/search/:phone', requireAuth, async (req, res) => {
     try {
         const user = await User.findOne({ phone: req.params.phone }).select('name phone avatar bio');
@@ -209,9 +209,7 @@ io.use((socket, next) => {
 io.on('connection', (socket) => {
     const myPhone = socket.user.phone;
     socket.join(myPhone);
-    console.log(`⚡ User Online: ${myPhone}`);
 
-    // Call Events (WebRTC Signaling)
     socket.on('call-user', (data) => {
         io.to(data.userToCall).emit('incoming-call', { 
             signal: data.signalData, 

@@ -19,17 +19,20 @@ const io = new Server(server, {
     cors: { origin: "*" }
 });
 
+// Content Security Policy ကို Video Call အတွက် လိုအပ်တာတွေ ထပ်ဖြည့်ထားတယ်
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-            "script-src": ["'self'", "'unsafe-inline'"],
+            "script-src": ["'self'", "'unsafe-inline'", "https://unpkg.com"],
             "script-src-attr": ["'self'", "'unsafe-inline'"],
-            "img-src": ["'self'", "data:", "res.cloudinary.com"],
-            "connect-src": ["'self'", "https://res.cloudinary.com", "wss://my-love-chat.onrender.com"],
+            "img-src": ["'self'", "data:", "res.cloudinary.com", "via.placeholder.com", "https://api.dicebear.com"],
+            "connect-src": ["'self'", "https://res.cloudinary.com", "wss://my-love-chat.onrender.com", "https://assets.mixkit.co"],
+            "media-src": ["'self'", "data:", "blob:", "https://assets.mixkit.co"],
         },
     },
 }));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -118,11 +121,9 @@ app.get('/api/user/:phone', requireAuth, async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Server error" }); }
 });
 
-// ⭐ Conversation List API (Messages Page အတွက်)
 app.get('/api/conversations', requireAuth, async (req, res) => {
     try {
         const myPhone = req.user.phone;
-        // ကိုယ်နဲ့ဆိုင်တဲ့ message အကုန်လုံးကို နောက်ဆုံးတစ်ခုကနေစယူမယ်
         const messages = await Message.find({
             $or: [{ senderPhone: myPhone }, { receiverPhone: myPhone }]
         }).sort({ createdAt: -1 });
@@ -174,7 +175,6 @@ app.post('/api/send', sendLimiter, requireAuth, async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Send failed" }); }
 });
 
-// Frontend Routes
 app.get(['/dashboard', '/messages', '/settings', '/edit-profile', '/call'], (req, res) => {
     const page = req.path.split('/')[1];
     res.sendFile(path.join(__dirname, 'public', `${page}.html`));
@@ -185,7 +185,7 @@ app.use((req, res, next) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// --- Socket.io Logic ---
+// --- Socket.io Logic (Call Signaling ပါဝင်သည်) ---
 io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
     if (!token) return next(new Error('Auth error'));
@@ -198,6 +198,24 @@ io.use((socket, next) => {
 io.on('connection', (socket) => {
     const myPhone = socket.user.phone;
     socket.join(myPhone);
+    console.log(`⚡ User Online: ${myPhone}`);
+
+    // Call Events
+    socket.on('call-user', (data) => {
+        io.to(data.userToCall).emit('incoming-call', { 
+            signal: data.signalData, 
+            from: data.from, 
+            type: data.type 
+        });
+    });
+
+    socket.on('answer-call', (data) => {
+        io.to(data.to).emit('call-accepted', data.signal);
+    });
+
+    socket.on('end-call', (data) => {
+        io.to(data.to).emit('call-ended');
+    });
 
     socket.on('typing', (data) => {
         socket.to(data.receiver).emit('is_typing', { sender: myPhone });
@@ -208,7 +226,12 @@ io.on('connection', (socket) => {
         socket.to(data.sender).emit('messages_read', { by: myPhone });
     });
 
-    socket.on('disconnect', () => {});
+    socket.on('disconnect', () => {
+        console.log(`🔥 User Offline: ${myPhone}`);
+    });
 });
 
-server.listen(process.env.PORT || 3000);
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`🚀 Z-SPACE Server running on port ${PORT}`);
+});

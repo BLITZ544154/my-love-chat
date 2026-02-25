@@ -21,8 +21,6 @@
         .input-row { display: flex; align-items: center; gap: 10px; }
         input { flex: 1; background: #161b22; border: 1px solid #333; padding: 12px 18px; border-radius: 25px; color: white; outline: none; }
         .action-btn { background: none; border: none; color: var(--primary); font-size: 20px; cursor: pointer; transition: 0.2s; }
-        .recording { color: #ff4b2b; animation: blink 1s infinite; }
-        @keyframes blink { 50% { opacity: 0; } }
         #typing-status { font-size: 11px; color: var(--primary); margin-left: 55px; height: 15px; font-style: italic; }
         .seen-status { font-size: 10px; align-self: flex-end; margin-top: -8px; color: #888; }
     </style>
@@ -49,7 +47,7 @@
 
     <div class="input-area">
         <div class="input-row">
-            <button class="action-btn" id="voice-btn" onmousedown="startRecording()" onmouseup="stopRecording()" ontouchstart="startRecording()" ontouchend="stopRecording()">
+            <button class="action-btn" id="voice-btn">
                 <i class="fas fa-microphone"></i>
             </button>
             <input type="text" id="msg-input" placeholder="Type a message..." autocomplete="off" onkeypress="handleKeyPress(event)">
@@ -63,26 +61,39 @@
         const token = localStorage.getItem('token');
         const socket = io({ auth: { token } });
         const myPhone = localStorage.getItem('user_phone');
+        // URL ကနေ တစ်ဖက်လူရဲ့ ဖုန်းနံပါတ်ကို ယူတယ်
         const peerPhone = new URLSearchParams(window.location.search).get('user');
         
-        if(!myPhone) window.location.href = '/';
+        if(!myPhone || !token) window.location.href = '/';
 
         let typingTimeout;
         const notiSound = new Audio('https://res.cloudinary.com/dmup7sh9r/video/upload/v1740484766/mixkit-correct-answer-tone-2870_wcc8un.wav');
 
-        async function init() {
-            const res = await fetch(`/api/user/${peerPhone}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const user = await res.json();
-            if(user) {
-                document.getElementById('peer-name').innerText = user.name;
-                document.getElementById('peer-img').src = user.avatar || "https://via.placeholder.com/45";
-            }
-            loadMsgs();
+        // --- Video/Voice Call Function (အသစ်ထည့်သွင်းထားသည်) ---
+        function startCall(type) {
+            if (!peerPhone) return alert("User error!");
+            // call.html ကို တစ်ဖက်လူနံပါတ်၊ ကိုယ်ကစခေါ်သူ(caller) နဲ့ call type တို့လှမ်းပို့ပေးရမယ်
+            window.location.href = `/call?user=${peerPhone}&caller=true&type=${type}`;
         }
 
-        // Typing Indicator Logic
+        async function init() {
+            try {
+                const res = await fetch(`/api/user/${peerPhone}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const user = await res.json();
+                if(user && !user.error) {
+                    document.getElementById('peer-name').innerText = user.name;
+                    document.getElementById('peer-img').src = user.avatar || "https://via.placeholder.com/45";
+                } else {
+                    document.getElementById('peer-name').innerText = "Unknown User";
+                }
+                loadMsgs();
+            } catch (err) {
+                console.error("Init error:", err);
+            }
+        }
+
         function handleKeyPress(e) {
             if(e.key === 'Enter') {
                 sendText();
@@ -101,7 +112,6 @@
             }
         });
 
-        // New Message & Sound Logic
         socket.on('new-message', (msg) => {
             if(msg.senderPhone === peerPhone || msg.senderPhone === myPhone) {
                 appendMessage(msg);
@@ -119,19 +129,20 @@
             }
         });
 
-        function appendMessage(m, prepend = false) {
+        function appendMessage(m) {
             const box = document.getElementById('chat-box');
             const isMe = m.senderPhone === myPhone;
-            const div = document.createElement('div');
-            div.className = `msg ${isMe ? 'me' : 'other'}`;
+            
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `msg ${isMe ? 'me' : 'other'}`;
             
             if(m.type === 'audio') {
-                div.innerHTML = `<audio controls style="height:35px; width:180px;"><source src="${m.text}"></audio>`;
+                msgDiv.innerHTML = `<audio controls style="height:35px; width:180px;"><source src="${m.text}"></audio>`;
             } else {
-                div.innerText = m.text;
+                msgDiv.innerText = m.text;
             }
 
-            box.appendChild(div);
+            box.appendChild(msgDiv);
             
             if(isMe) {
                 const seenLabel = document.createElement('div');
@@ -150,7 +161,9 @@
             const data = await res.json();
             const box = document.getElementById('chat-box');
             box.innerHTML = '';
-            data.forEach(m => appendMessage(m));
+            if(Array.isArray(data)) {
+                data.forEach(m => appendMessage(m));
+            }
             socket.emit('mark_seen', { sender: peerPhone });
         }
 
@@ -163,12 +176,9 @@
             await fetch('/api/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ receiver: peerPhone, text: text })
+                body: JSON.stringify({ receiver: peerPhone, text: text, type: 'text' })
             });
         }
-
-        // Recording logic (Keep your original logic but ensure token is used)
-        // [ယူထားသော mediaRecorder logic များ ဤနေရာတွင် ဆက်လက်ရှိနေမည်...]
 
         init();
     </script>

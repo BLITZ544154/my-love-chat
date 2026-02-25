@@ -430,8 +430,13 @@ app.get('/call', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'call.html'));
 });
 
-// Catch-all for unknown routes (SPA-style fallback to index) - Express 5 syntax
-app.get('/:any*', (req, res) => {
+// Middleware to handle SPA routing (Express 5 safe)
+app.use((req, res, next) => {
+    // If the request is for an API or has a file extension, skip it
+    if (req.url.startsWith('/api') || req.url.includes('.')) {
+        return next();
+    }
+    // Otherwise, serve index.html
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 

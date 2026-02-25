@@ -13,15 +13,12 @@ const { v2: cloudinary } = require('cloudinary');
 const app = express();
 const server = http.createServer(app);
 
-// Render / proxies အတွက် trust proxy သတ်မှတ်ထားမယ် (express-rate-limit အတွက်လို)
 app.set('trust proxy', 1);
 
-// Socket.io Setup
 const io = new Server(server, {
     cors: { origin: "*" }
 });
 
-// Static & security middlewares
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -29,447 +26,153 @@ app.use(helmet({
             "script-src": ["'self'", "'unsafe-inline'"],
             "script-src-attr": ["'self'", "'unsafe-inline'"],
             "img-src": ["'self'", "data:", "res.cloudinary.com"],
+            "connect-src": ["'self'", "https://res.cloudinary.com", "wss://my-love-chat.onrender.com"],
         },
     },
 }));
 app.use(express.json({ limit: '5mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- Environment & security ---
 const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-    throw new Error("JWT_SECRET is required");
-}
-
 const MONGO_URI = process.env.MONGODB_URI;
-if (!MONGO_URI) {
-    throw new Error("MONGODB_URI is required");
-}
-
 const CLOUDINARY_URL = process.env.CLOUDINARY_URL;
-if (!CLOUDINARY_URL) {
-    throw new Error("CLOUDINARY_URL is required");
-}
 
-cloudinary.config({
-    secure: true
-});
+cloudinary.config({ secure: true });
 
-// Rate limiters (production hardening)
-const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 20,
-    standardHeaders: true,
-    legacyHeaders: false
-});
-
-const sendLimiter = rateLimit({
-    windowMs: 60 * 1000,
-    max: 60,
-    standardHeaders: true,
-    legacyHeaders: false
-});
-
-// 1. Database Connection + old index cleanup
-mongoose.connection.on('connected', async () => {
-    try {
-        await mongoose.connection.db.collection('users').dropIndex('email_1');
-        console.log('✅ Old email index dropped');
-    } catch (e) {
-        console.log('Index already gone or error dropping index');
-    }
-});
+const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20 });
+const sendLimiter = rateLimit({ windowMs: 60 * 1000, max: 60 });
 
 mongoose.connect(MONGO_URI)
     .then(() => console.log("✅ MongoDB ချိတ်ဆက်မှု အောင်မြင်သည်!"))
     .catch(err => console.error("❌ DB Error:", err));
 
-// 2. Schemas & Models
-// User Schema (phone ကို main identity အဖြစ် သုံးမယ်)
+// --- Models ---
 const userSchema = new mongoose.Schema({
     phone: { type: String, required: true, unique: true },
     name: { type: String, required: true },
     password: { type: String, required: true },
     avatar: { type: String },
     bio: { type: String },
-    wallet: {
-        balance: { type: Number, default: 0 }
-    },
-    isVerified: { type: Boolean, default: false },
-    settings: {
-        notiSound: { type: Boolean, default: true },
-        privacy: {
-            showNumber: { type: Boolean, default: true }
-        }
-    }
+    wallet: { balance: { type: Number, default: 0 } },
+    isVerified: { type: Boolean, default: false }
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);
 
-// Message Schema (per conversation, scalable index)
 const messageSchema = new mongoose.Schema({
     conversationId: { type: String, index: true },
-    senderPhone: { type: String, required: true, index: true },
-    receiverPhone: { type: String, required: true, index: true },
+    senderPhone: { type: String, required: true },
+    receiverPhone: { type: String, required: true },
     text: { type: String, required: true },
-    type: { type: String, enum: ['text', 'audio'], default: 'text' }
+    type: { type: String, enum: ['text', 'audio'], default: 'text' },
+    isSeen: { type: Boolean, default: false } // Seen feature အတွက် ထည့်ထားသည်
 }, { timestamps: true });
-
-messageSchema.index({ conversationId: 1, createdAt: -1 });
 
 const Message = mongoose.model('Message', messageSchema);
 
-// Helper: stable conversation id for two phones
-function getConversationId(a, b) {
-    return [a, b].sort().join(':');
+function getConversationId(a, b) { return [a, b].sort().join(':'); }
+
+async function uploadBase64ToCloudinary(dataUrl, folder) {
+    const result = await cloudinary.uploader.upload(dataUrl, { folder, resource_type: 'auto' });
+    return result.secure_url;
 }
 
-// Helper: upload base64 data URL to Cloudinary and return secure URL
-async function uploadBase64ToCloudinary(dataUrl, options) {
-    return new Promise((resolve, reject) => {
-        cloudinary.uploader.upload(
-            dataUrl,
-            options,
-            (error, result) => {
-                if (error) return reject(error);
-                return resolve(result.secure_url);
-            }
-        );
-    });
-}
-
-// --- Auth middleware ---
+// --- Auth Middleware ---
 function requireAuth(req, res, next) {
-    const authHeader = req.headers.authorization || '';
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-    if (!token) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Unauthorized' });
     try {
         const payload = jwt.verify(token, JWT_SECRET);
-        req.user = { id: payload.id, phone: payload.phone };
+        req.user = payload;
         next();
-    } catch (err) {
-        return res.status(401).json({ error: 'Invalid token' });
-    }
+    } catch (err) { res.status(401).json({ error: 'Invalid token' }); }
 }
 
-// 3. Auth Routes (phone-based, frontend တွေနဲ့ ကိုက်ညီအောင်)
+// --- Routes ---
 app.post('/api/auth/register', async (req, res) => {
     try {
         const { phone, password, name } = req.body;
-        if (!phone || !password || !name) {
-            return res.status(400).json({ success: false, error: "Phone, name, password လိုအပ်ပါတယ်" });
-        }
-        if (password.length < 6) {
-            return res.status(400).json({ success: false, error: "Password အနည်းဆုံး 6 လုံး လိုအပ်ပါတယ်" });
-        }
-
         const hashedPassword = await bcrypt.hash(password, 10);
-
-        const existing = await User.findOne({ phone });
-        if (existing) {
-            // Phone ရှိပြီးသားဆိုရင် password + name ကို update လုပ်ပေးမယ် (reset account အနေနဲ့)
-            existing.name = name;
-            existing.password = hashedPassword;
-            await existing.save();
-
-            return res.status(200).json({
-                success: true,
-                message: "Account ကို အသစ် password နဲ့ update လုပ်ပြီးပါပြီ (reset success)"
-            });
-        }
-
-        const user = new User({
-            phone,
-            name,
-            password: hashedPassword
-        });
-        await user.save();
-
-        return res.status(201).json({ success: true, message: "Account ဖန်တီးပြီးပါပြီ" });
-    } catch (error) {
-        console.error("Register Error:", error);
-        return res.status(500).json({ success: false, error: "Register လုပ်လို့မရပါ" });
-    }
+        await User.findOneAndUpdate({ phone }, { name, password: hashedPassword }, { upsert: true });
+        res.status(201).json({ success: true, message: "Success" });
+    } catch (e) { res.status(500).json({ error: "Register failed" }); }
 });
 
 app.post('/api/auth/login', loginLimiter, async (req, res) => {
     try {
         const { phone, password } = req.body;
-        console.log("[AUTH] Login attempt", { phone });
-
-        if (!phone || !password) {
-            console.warn("[AUTH] Login failed: missing phone or password", { phone });
-            return res.status(400).json({ success: false, error: "Phone, password လိုအပ်ပါတယ်" });
-        }
-
         const user = await User.findOne({ phone });
-        if (!user) {
-            console.warn("[AUTH] Login failed: user not found", { phone });
-            return res.status(404).json({ success: false, error: "User ရှာမတွေ့ပါ" });
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            return res.status(400).json({ error: "Invalid credentials" });
         }
-
-        if (typeof user.password !== 'string') {
-            console.error("[AUTH] Login failed: user has no valid password field", { phone, userId: user._id });
-            return res.status(500).json({
-                success: false,
-                error: "ဒီ account ကို ဟောင်း version နဲ့ ဖန်တီးထားလို့ Login မလုပ်နိုင်သေးဘူး. Phone အသစ်နဲ့ Register လုပ်ပေးပါ."
-            });
-        }
-
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            console.warn("[AUTH] Login failed: password mismatch", { phone });
-            return res.status(400).json({ success: false, error: "Password မှားနေတယ်" });
-        }
-
-        const token = jwt.sign(
-            { id: user._id.toString(), phone: user.phone },
-            JWT_SECRET,
-            { expiresIn: '1d' }
-        );
-
-        console.log("[AUTH] Login success", { phone });
-
-        return res.json({
-            success: true,
-            token,
-            user: {
-                phone: user.phone,
-                name: user.name
-            }
-        });
-    } catch (error) {
-        console.error("[AUTH] Login unexpected error:", error);
-        return res.status(500).json({ success: false, error: "Login လုပ်လို့မရပါ" });
-    }
-});
-
-// 4. User Profile APIs
-app.get('/api/user/:phone', requireAuth, async (req, res) => {
-    try {
-        const user = await User.findOne({ phone: req.params.phone }).lean();
-        if (!user) {
-            return res.status(404).json(null);
-        }
-        return res.json({
-            phone: user.phone,
-            name: user.name,
-            avatar: user.avatar,
-            bio: user.bio,
-            wallet: user.wallet,
-            isVerified: user.isVerified
-        });
-    } catch (error) {
-        console.error("Get User Error:", error);
-        return res.status(500).json({ error: "Server error" });
-    }
-});
-
-app.post('/api/user/update', requireAuth, async (req, res) => {
-    try {
-        const { name, bio, avatar } = req.body;
-        const phoneFromToken = req.user.phone;
-
-        const updateDoc = { name, bio };
-
-        if (avatar) {
-            let avatarToSave = avatar;
-            if (typeof avatar === 'string' && avatar.startsWith('data:')) {
-                avatarToSave = await uploadBase64ToCloudinary(avatar, {
-                    folder: 'zspace/avatars',
-                    resource_type: 'image'
-                });
-            }
-            updateDoc.avatar = avatarToSave;
-        }
-
-        const updated = await User.findOneAndUpdate(
-            { phone: phoneFromToken },
-            { $set: updateDoc },
-            { new: true }
-        ).lean();
-
-        if (!updated) {
-            return res.status(404).json({ error: "User မတွေ့ပါ" });
-        }
-
-        return res.json({
-            success: true,
-            user: {
-                phone: updated.phone,
-                name: updated.name,
-                avatar: updated.avatar,
-                bio: updated.bio
-            }
-        });
-    } catch (error) {
-        console.error("Update User Error:", error);
-        return res.status(500).json({ success: false, error: "Update လုပ်လို့မရပါ" });
-    }
-});
-
-// 5. Messaging APIs (optimized basic version + pagination)
-app.get('/api/messages/:me/:peer', requireAuth, async (req, res) => {
-    try {
-        const { me, peer } = req.params;
-        if (req.user.phone !== me) {
-            return res.status(403).json({ error: "Forbidden" });
-        }
-        const conversationId = getConversationId(me, peer);
-
-        const { limit = 50, before } = req.query;
-        const numericLimit = Math.min(parseInt(limit, 10) || 50, 100);
-
-        const query = { conversationId };
-        if (before) {
-            const beforeDate = new Date(before);
-            if (!isNaN(beforeDate.getTime())) {
-                query.createdAt = { $lt: beforeDate };
-            }
-        }
-
-        let messages = await Message.find(query)
-            .sort({ createdAt: -1 })
-            .limit(numericLimit)
-            .lean();
-
-        // client wants oldest -> newest
-        messages = messages.reverse();
-
-        return res.json(
-            messages.map(m => ({
-                sender: m.senderPhone,
-                receiver: m.receiverPhone,
-                text: m.text,
-                type: m.type,
-                createdAt: m.createdAt
-            }))
-        );
-    } catch (error) {
-        console.error("Get Messages Error:", error);
-        return res.status(500).json({ error: "Server error" });
-    }
+        const token = jwt.sign({ id: user._id, phone: user.phone }, JWT_SECRET, { expiresIn: '1d' });
+        res.json({ success: true, token, user: { name: user.name, phone: user.phone } });
+    } catch (e) { res.status(500).json({ error: "Login failed" }); }
 });
 
 app.post('/api/send', sendLimiter, requireAuth, async (req, res) => {
     try {
+        const { receiver, text, type = 'text' } = req.body;
         const senderPhone = req.user.phone;
-        const { receiver, text } = req.body || {};
-
-        if (!receiver || !text) {
-            return res.status(400).json({ error: "receiver, text လိုအပ်ပါတယ်" });
+        let finalPath = text;
+        if (type === 'audio') {
+            finalPath = await uploadBase64ToCloudinary(text, 'zspace/voice');
         }
-
-        let type = 'text';
-        let storedText = text;
-
-        if (String(text).startsWith('data:audio')) {
-            type = 'audio';
-            storedText = await uploadBase64ToCloudinary(text, {
-                folder: 'zspace/voice',
-                resource_type: 'video'
-            });
-        }
-
-        const conversationId = getConversationId(senderPhone, receiver);
-
         const msg = await Message.create({
-            conversationId,
-            senderPhone,
-            receiverPhone: receiver,
-            text: storedText,
-            type
+            conversationId: getConversationId(senderPhone, receiver),
+            senderPhone, receiverPhone: receiver, text: finalPath, type
         });
-
-        const payload = {
-            sender: msg.senderPhone,
-            receiver: msg.receiverPhone,
-            text: msg.text,
-            type: msg.type,
-            createdAt: msg.createdAt
-        };
-
-        // Emit only to sender & receiver private rooms
-        io.to(senderPhone).to(receiver).emit('new-message', payload);
-
-        return res.status(201).json({ success: true, message: payload });
-    } catch (error) {
-        console.error("Send Message Error:", error);
-        return res.status(500).json({ success: false, error: "Message မပို့နိုင်ပါ" });
-    }
+        io.to(receiver).to(senderPhone).emit('new-message', msg);
+        res.status(201).json({ success: true, message: msg });
+    } catch (e) { res.status(500).json({ error: "Send failed" }); }
 });
 
-// 6. Frontend routes (serve SPA / HTML files)
-app.get('/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+// Frontend Routes
+app.get(['/dashboard', '/messages', '/settings', '/edit-profile', '/call'], (req, res) => {
+    const page = req.path.split('/')[1];
+    res.sendFile(path.join(__dirname, 'public', `${page}.html`));
 });
 
-app.get('/messages', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'messages.html'));
-});
-
-app.get('/edit-profile', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'edit-profile.html'));
-});
-
-app.get('/settings', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'settings.html'));
-});
-
-app.get('/security', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'security.html'));
-});
-
-app.get('/inbox', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'inbox.html'));
-});
-
-app.get('/call', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'call.html'));
-});
-
-// Middleware to handle SPA routing (Express 5 safe)
 app.use((req, res, next) => {
-    // If the request is for an API or has a file extension, skip it
-    if (req.url.startsWith('/api') || req.url.includes('.')) {
-        return next();
-    }
-    // Otherwise, serve index.html
+    if (req.url.startsWith('/api') || req.url.includes('.')) return next();
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// 7. Socket.io Real-time Connection with JWT auth & private rooms
+// --- Socket.io Logic (The "Magic" Part) ---
 io.use((socket, next) => {
+    const token = socket.handshake.auth?.token;
     try {
-        const token = socket.handshake.auth && socket.handshake.auth.token;
-        if (!token) {
-            return next(new Error('Unauthorized'));
-        }
-        const payload = jwt.verify(token, JWT_SECRET);
-        socket.user = { id: payload.id, phone: payload.phone };
-        return next();
-    } catch (err) {
-        return next(new Error('Unauthorized'));
-    }
+        socket.user = jwt.verify(token, JWT_SECRET);
+        next();
+    } catch (e) { next(new Error('Auth error')); }
 });
 
 io.on('connection', (socket) => {
-    const userPhone = socket.user && socket.user.phone;
-    if (userPhone) {
-        socket.join(userPhone);
-        console.log(`⚡ User ${userPhone} connected with socket ${socket.id}`);
-    } else {
-        console.log(`⚡ Unidentified socket connected: ${socket.id}`);
-    }
+    const myPhone = socket.user.phone;
+    socket.join(myPhone);
+    console.log(`⚡ ${myPhone} connected`);
 
-    socket.on('disconnect', () => {
-        console.log("🔥 User ထွက်သွားပြီ");
+    // Typing...
+    socket.on('typing', (data) => {
+        socket.to(data.receiver).emit('is_typing', { sender: myPhone });
     });
+
+    // Seen Status
+    socket.on('mark_seen', async (data) => {
+        await Message.updateMany({ conversationId: getConversationId(myPhone, data.sender), receiverPhone: myPhone }, { isSeen: true });
+        socket.to(data.sender).emit('messages_read', { by: myPhone });
+    });
+
+    // Call Signaling
+    socket.on('call_request', (data) => {
+        socket.to(data.to).emit('incoming_call', { from: myPhone, signal: data.signal });
+    });
+
+    socket.on('call_response', (data) => {
+        socket.to(data.to).emit('call_finalized', { signal: data.signal, accepted: data.accepted });
+    });
+
+    socket.on('disconnect', () => console.log("🔥 Disconnected"));
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`🚀 Server is running on port ${PORT}`);
-});
+server.listen(process.env.PORT || 3000);

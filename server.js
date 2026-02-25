@@ -3,24 +3,23 @@ const path = require('path');
 const app = express();
 const port = process.env.PORT || 10000;
 
-// public folder ထဲက Static ဖိုင်တွေကို သုံးခွင့်ပေးမယ်
+// ၁။ Static ဖိုင်တွေကို အရင်ဖတ်ခိုင်းမယ်
 app.use(express.static(path.join(__dirname, 'public')));
 
-// အဓိက Login Page
+// ၂။ အဓိက စာမျက်နှာများအတွက် Route သတ်မှတ်မယ်
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Dashboard စာမျက်နှာ
 app.get('/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
-// ဘယ် Link ပဲရိုက်ရိုက် Home ကို ပြန်ပို့မယ့် Catch-all route (Fix for Express 5+)
-app.get('/:path*', (req, res) => {
-    res.redirect('/');
+// ၃။ Catch-all: အပေါ်က Route တွေနဲ့မကိုင်ရင် index.html ကိုပဲ ပို့ပေးမယ် (Error-free way)
+app.use((req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(port, () => {
-    console.log(`Z-SPACE Engine is now Live on port ${port}`);
+    console.log(`Server running on port ${port}`);
 });

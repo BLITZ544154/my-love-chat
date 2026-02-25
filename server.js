@@ -10,17 +10,27 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // ၂။ စာမျက်နှာများသို့ လမ်းကြောင်းဖောက်ခြင်း (Routes)
 
-// အဓိက Login/Register စာမျက်နှာ (Phone Number Auth)
+// Login/Register Page (Phone Number Auth)
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Dashboard စာမျက်နှာ (Owner Mode & Profile Display)
+// Dashboard Page (Owner VIP Mode ပါဝင်သည်)
 app.get('/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
-// Settings နဲ့ Sub-pages များ
+// စာရင်းကြည့်ရန် Messages List Page (Messenger Home လိုမျိုး)
+app.get('/messages', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'messages.html'));
+});
+
+// တစ်ယောက်ချင်းစီ သီးသန့်စကားပြောရန် Inbox Page
+app.get('/inbox', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'inbox.html'));
+});
+
+// Settings နဲ့ တခြား စာမျက်နှာများ
 app.get('/settings', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'settings.html'));
 });
@@ -41,12 +51,7 @@ app.get('/about-device', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'about-device.html'));
 });
 
-// Global Chat Page (အသစ်တိုးလိုက်တဲ့ Feature)
-app.get('/chat', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'chat.html'));
-});
-
-// ၃။ Catch-all Middleware: မရှိတဲ့ Link တွေဝင်ရင် Index ဆီ ပြန်ပို့မယ် (Express Fix)
+// ၃။ Catch-all Middleware: မရှိတဲ့ Link တွေဝင်ရင် Index (Login) ဆီ ပြန်ပို့မယ်
 app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -54,7 +59,7 @@ app.use((req, res) => {
 // ၄။ Server စတင်နိုးကြားခြင်း
 app.listen(port, () => {
     console.log(`-------------------------------------------`);
-    console.log(`🚀 Z-SPACE ENGINE IS RUNNING!`);
+    console.log(`🚀 Z-SPACE ENGINE: PRIVATE MESSAGING ACTIVE`);
     console.log(`📡 Port: ${port}`);
     console.log(`🔗 Preview: http://localhost:${port}`);
     console.log(`-------------------------------------------`);

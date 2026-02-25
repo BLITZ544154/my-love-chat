@@ -3,109 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>GLOW Z-SPACE | Premium Preview</title>
+    <title>Z-SPACE | DASHBOARD</title>
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
     <style>
         :root { --c1:#00f2ff; --c2:#ff0055; --bg:#050508; }
-        body { margin:0; background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; display:flex; justify-content:center; align-items:center; min-height:100vh; }
+        body { margin:0; background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; display:flex; flex-direction:column; align-items:center; min-height:100vh; padding:30px 20px; }
 
-        /* Premium Profile Card with Neon Glow */
-        .profile-card {
-            background: #111;
-            width: 340px;
-            padding: 40px 20px;
-            border-radius: 40px;
-            text-align: center;
-            border: 1px solid #222;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 0 30px rgba(0, 242, 255, 0.1);
+        /* Premium Card */
+        .profile-card { 
+            background: linear-gradient(145deg, #111, #0a0a0a); 
+            width: 340px; padding: 50px 20px; 
+            border-radius: 50px; text-align: center; 
+            border: 1px solid #222; position: relative; 
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8);
         }
 
-        /* Animated Avatar Frame (မီးတောက်ဘောင်) */
-        .avatar-wrapper {
-            width: 130px;
-            height: 130px;
-            margin: 0 auto 20px;
-            position: relative;
-            padding: 5px;
-            border-radius: 50%;
-            background: conic-gradient(from 0deg, var(--c1), var(--c2), var(--c1));
-            animation: rotateFrame 3s linear infinite;
+        /* Neon Rotating Frame */
+        .avatar-wrapper { 
+            width: 140px; height: 140px; margin: 0 auto 25px; 
+            position: relative; padding: 6px; border-radius: 50%; 
+            background: conic-gradient(from 0deg, var(--c1), var(--c2), #ffd700, var(--c1)); 
+            animation: rotateFrame 4s linear infinite; 
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);
         }
+        @keyframes rotateFrame { 100% { transform:rotate(360deg); } }
+        
+        .avatar-inner { 
+            width: 100%; height: 100%; background: #000; border-radius: 50%; 
+            padding: 4px; display: flex; justify-content: center; align-items: center; 
+            transform: rotate(-360deg); animation: rotateFrame 4s linear infinite reverse; 
+        }
+        .avatar-inner img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid #111; }
 
-        @keyframes rotateFrame {
-            100% { transform: rotate(360deg); }
-        }
+        /* Text Effects */
+        .user-name { font-size: 28px; font-weight: 900; color: #ffd700; text-shadow: 0 0 20px rgba(255, 213, 0, 0.6); margin: 10px 0; letter-spacing: 1px; }
+        .badge-row { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; }
+        .badge { font-size: 10px; background: rgba(255,255,255,0.05); padding: 6px 15px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); font-weight: 600; letter-spacing: 1px; color: #aaa; }
 
-        .avatar-inner {
-            width: 100%;
-            height: 100%;
-            background: #000;
-            border-radius: 50%;
-            padding: 3px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transform: rotate(-360deg); /* ပုံကိုမလှည့်အောင်ပြန်ထိန်းတာ */
-            animation: rotateFrame 3s linear infinite reverse;
-        }
+        .stats-container { background: rgba(0,242,255,0.03); border: 1px solid rgba(0,242,255,0.1); padding: 20px; border-radius: 30px; margin-top: 10px; }
+        .points { color: var(--c1); font-size: 20px; font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 10px; }
 
-        .avatar-inner img {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            object-fit: cover;
-        }
+        /* kkk.json Lottie */
+        .system-status { margin-top: 35px; opacity: 0.6; }
 
-        /* Gold Name & Neon Effect */
-        .user-name {
-            font-size: 24px;
-            font-weight: 900;
-            margin: 10px 0;
-            color: #ffd700;
-            text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        .btn-chat { 
+            width: 340px; padding: 20px; background: #151515; 
+            border: 1px solid #222; border-radius: 25px; color: #fff; 
+            font-weight: 900; margin-top: 25px; cursor: pointer; 
+            display: flex; justify-content: space-between; align-items: center; 
+            transition: 0.4s; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
         }
-
-        .badge-row {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .premium-badge {
-            font-size: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 5px 12px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-
-        /* Points Box */
-        .points-box {
-            background: rgba(0, 242, 255, 0.05);
-            border: 1px solid rgba(0, 242, 255, 0.2);
-            padding: 15px;
-            border-radius: 20px;
-            color: var(--c1);
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        /* Loading Animation from kkk.json */
-        .loading-container {
-            margin-top: 20px;
-            opacity: 0.7;
-        }
+        .btn-chat:hover { border-color: var(--c1); background: #1a1a1a; transform: translateY(-3px); }
     </style>
 </head>
 <body>
@@ -118,28 +68,34 @@
         </div>
 
         <div class="badge-row">
-            <span class="premium-badge">SUPREME</span>
-            <span class="premium-badge">LEGEND</span>
+            <span class="badge">PLATINUM</span>
+            <span class="badge">VERIFIED</span>
         </div>
 
-        <h2 class="user-name">Toe Tat Aung</h2>
-        <div class="points-box">
-            <i class="fas fa-coins" style="color:#ffd700"></i>
-            Points: 999,999
+        <h2 class="user-name" id="display-name">Loading...</h2>
+        
+        <div class="stats-container">
+            <div class="points">
+                <i class="fas fa-coins" style="color:#ffd700"></i>
+                999,999
+            </div>
         </div>
 
-        <div class="loading-container">
-            <lottie-player 
-                src="kkk.json"  
-                background="transparent"  
-                speed="1"  
-                style="width: 60px; height: 60px; margin: auto;"  
-                loop  
-                autoplay>
-            </lottie-player>
-            <p style="font-size: 10px; color: #555; margin-top: -10px;">SYSTEM ACTIVE</p>
+        <div class="system-status">
+            <lottie-player src="kkk.json" background="transparent" speed="1" style="width: 80px; height: 80px; margin: auto;" loop autoplay></lottie-player>
+            <p style="font-size:9px; color:var(--c1); letter-spacing: 3px; font-weight: 600;">ENCRYPTED SESSION</p>
         </div>
     </div>
 
+    <button class="btn-chat" onclick="alert('Chat System Online at 2:00 PM!')">
+        <span><i class="fas fa-bolt" style="color:var(--c1); margin-right: 10px;"></i> GLOBAL CHAT</span>
+        <i class="fas fa-arrow-right"></i>
+    </button>
+
+    <script>
+        const name = localStorage.getItem('glow_user');
+        if(name) { document.getElementById('display-name').innerText = name; }
+        else { window.location.href = "index.html"; }
+    </script>
 </body>
 </html>

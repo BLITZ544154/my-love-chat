@@ -19,7 +19,15 @@ const io = new Server(server, {
 });
 
 // Static & security middlewares
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            "script-src": ["'self'", "'unsafe-inline'"],
+            "img-src": ["'self'", "data:", "res.cloudinary.com"],
+        },
+    },
+}));
 app.use(express.json({ limit: '5mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 

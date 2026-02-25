@@ -401,7 +401,41 @@ app.post('/api/send', sendLimiter, requireAuth, async (req, res) => {
     }
 });
 
-// 6. Socket.io Real-time Connection with JWT auth & private rooms
+// 6. Frontend routes (serve SPA / HTML files)
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
+
+app.get('/messages', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'messages.html'));
+});
+
+app.get('/edit-profile', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'edit-profile.html'));
+});
+
+app.get('/settings', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'settings.html'));
+});
+
+app.get('/security', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'security.html'));
+});
+
+app.get('/inbox', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'inbox.html'));
+});
+
+app.get('/call', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'call.html'));
+});
+
+// Catch-all for unknown routes (SPA-style fallback to index)
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// 7. Socket.io Real-time Connection with JWT auth & private rooms
 io.use((socket, next) => {
     try {
         const token = socket.handshake.auth && socket.handshake.auth.token;

@@ -3,71 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Z-SPACE | AUTHENTICATION</title>
-    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <title>Z-SPACE | Access</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;900&display=swap" rel="stylesheet">
     <style>
-        :root { --c1:#00f2ff; --c2:#ff0055; --bg:#050508; }
-        body { margin:0; background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; display:flex; justify-content:center; align-items:center; min-height:100vh; overflow:hidden; }
-        
-        /* Background Glow */
-        body::before { content:''; position:absolute; width:300px; height:300px; background:var(--c1); filter:blur(150px); opacity:0.1; top:10%; left:10%; z-index:-1; }
-
-        #loader { position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg); display:none; flex-direction:column; justify-content:center; align-items:center; z-index:999; }
-        
-        .login-box { 
-            background: rgba(17, 17, 17, 0.8); 
-            width: 320px; 
-            padding: 50px 30px; 
-            border-radius: 40px; 
-            border: 1px solid rgba(255,255,255,0.1); 
-            text-align: center; 
-            backdrop-filter: blur(10px);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
-
-        h2 { font-size: 32px; font-weight: 900; background: linear-gradient(to right, var(--c1), #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 4px; margin-bottom: 10px; }
-        p { font-size: 10px; color: #555; letter-spacing: 2px; margin-bottom: 30px; }
-
-        .input-group { position: relative; margin-bottom: 20px; }
-        input { 
-            width: 100%; padding: 15px 20px; background: #151515; 
-            border: 1px solid #222; border-radius: 20px; color: #fff; 
-            font-size: 14px; outline: none; transition: 0.4s; box-sizing: border-box;
-        }
-        input:focus { border-color: var(--c1); background: #1a1a1a; box-shadow: 0 0 20px rgba(0, 242, 255, 0.1); }
-
-        button { 
-            width: 100%; padding: 16px; background: var(--c1); 
-            border: none; border-radius: 20px; font-weight: 900; 
-            color: #000; cursor: pointer; transition: 0.4s; 
-            text-transform: uppercase; letter-spacing: 1px;
-        }
-        button:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0, 242, 255, 0.4); background: #fff; }
+        :root { --c1:#00f2ff; --bg:#050508; }
+        body { margin:0; background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; display:flex; justify-content:center; align-items:center; height:100vh; overflow: hidden; }
+        .auth-card { background:#111; width:320px; padding:40px 20px; border-radius:35px; text-align:center; border:1px solid #222; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        input { width:100%; background:#1a1a1a; border:1px solid #333; padding:15px; border-radius:15px; color:#fff; outline:none; box-sizing:border-box; margin-bottom:12px; transition: 0.3s; }
+        input:focus { border-color: var(--c1); box-shadow: 0 0 10px rgba(0,242,255,0.2); }
+        .btn { width:100%; padding:15px; background:var(--c1); border:none; border-radius:15px; font-weight:900; cursor:pointer; margin-top:10px; transition: 0.3s; }
+        .btn:active { transform: scale(0.95); }
+        .toggle-link { font-size:12px; color:#555; margin-top:20px; cursor:pointer; text-decoration: underline; }
     </style>
 </head>
 <body>
-    <div id="loader">
-        <lottie-player src="kkk.json" background="transparent" speed="1.5" style="width: 250px; height: 250px;" loop autoplay></lottie-player>
-        <p style="color:var(--c1); letter-spacing:5px; font-size:11px; font-weight: 600;">INITIALIZING SYSTEM...</p>
-    </div>
+    <div class="auth-card">
+        <h1 style="color:var(--c1); margin-bottom:5px; letter-spacing: 5px;">Z-SPACE</h1>
+        <p id="auth-title" style="font-size:10px; letter-spacing:2px; color:#444; margin-bottom:30px;">PREMIUM ENCRYPTED ACCESS</p>
 
-    <div class="login-box">
-        <h2>Z-SPACE</h2>
-        <p>PREMIUM ACCESS ONLY</p>
-        <div class="input-group">
-            <input type="text" id="username" placeholder="Enter Nickname" autocomplete="off">
+        <div id="auth-form">
+            <input type="text" id="user" placeholder="Username">
+            <input type="password" id="pass" placeholder="Password">
+            <button class="btn" onclick="handleAuth()" id="btn-text">LOGIN</button>
         </div>
-        <button onclick="enterSystem()">Connect</button>
+
+        <div class="toggle-link" onclick="toggleMode()" id="toggle-text">Don't have an account? Register</div>
     </div>
 
     <script>
-        function enterSystem() {
-            const user = document.getElementById('username').value;
-            if(!user) { alert("Please enter your name, Boss!"); return; }
-            localStorage.setItem('glow_user', user);
-            document.getElementById('loader').style.display = 'flex';
-            setTimeout(() => { window.location.href = "dashboard.html"; }, 3500);
+        let isLogin = true;
+
+        // Auto-Login Logic: Login ဝင်ထားရင် Dashboard ကို တန်းလွှတ်မယ်
+        if(localStorage.getItem('isLoggedIn') === 'true') {
+            window.location.href = 'dashboard';
+        }
+
+        function toggleMode() {
+            isLogin = !isLogin;
+            document.getElementById('btn-text').innerText = isLogin ? 'LOGIN' : 'REGISTER';
+            document.getElementById('auth-title').innerText = isLogin ? 'PREMIUM ENCRYPTED ACCESS' : 'CREATE NEW ACCOUNT';
+            document.getElementById('toggle-text').innerText = isLogin ? "Don't have an account? Register" : "Already have an account? Login";
+        }
+
+        function handleAuth() {
+            const u = document.getElementById('user').value.trim();
+            const p = document.getElementById('pass').value.trim();
+
+            if(!u || !p) return alert("Please fill all fields!");
+
+            if(isLogin) {
+                // Login လုပ်ငန်းစဉ်
+                const storedPass = localStorage.getItem('user_pass_' + u);
+                if(storedPass === p) {
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('glow_user', u); // Dashboard မှာ နာမည်ပြဖို့
+                    window.location.href = 'dashboard';
+                } else {
+                    alert("Invalid Username or Password!");
+                }
+            } else {
+                // Register လုပ်ငန်းစဉ်
+                if(localStorage.getItem('user_pass_' + u)) {
+                    return alert("Username already exists!");
+                }
+                localStorage.setItem('user_pass_' + u, p);
+                alert("Account Created Successfully! Please Login.");
+                toggleMode();
+            }
         }
     </script>
 </body>

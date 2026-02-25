@@ -3,21 +3,21 @@ const path = require('path');
 const app = express();
 const port = process.env.PORT || 10000;
 
-// public folder ထဲက ဖိုင်တွေကို Static အဖြစ် သုံးခွင့်ပေးမယ်
-app.use(express.static('public'));
+// public folder ထဲက Static ဖိုင်တွေကို သုံးခွင့်ပေးမယ်
+app.use(express.static(path.join(__dirname, 'public')));
 
-// အဓိက Login Page (index.html) ကို ပို့ပေးမယ့်အပိုင်း
+// အဓိက Login Page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Dashboard စာမျက်နှာကို တိုက်ရိုက်ခေါ်ရင် ပြပေးဖို့
+// Dashboard စာမျက်နှာ
 app.get('/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
-// မရှိတဲ့ Link တွေ ရိုက်ထည့်ရင် index.html ကိုပဲ ပြန်လွှတ်မယ် (Error fix version)
-app.get('(.*)', (req, res) => {
+// ဘယ် Link ပဲရိုက်ရိုက် Home ကို ပြန်ပို့မယ့် Catch-all route (Fix for Express 5+)
+app.get('/:path*', (req, res) => {
     res.redirect('/');
 });
 

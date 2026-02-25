@@ -13,6 +13,9 @@ const { v2: cloudinary } = require('cloudinary');
 const app = express();
 const server = http.createServer(app);
 
+// Render / proxies အတွက် trust proxy သတ်မှတ်ထားမယ် (express-rate-limit အတွက်လို)
+app.set('trust proxy', 1);
+
 // Socket.io Setup
 const io = new Server(server, {
     cors: { origin: "*" }
@@ -153,12 +156,21 @@ app.post('/api/auth/register', async (req, res) => {
             return res.status(400).json({ success: false, error: "Password အနည်းဆုံး 6 လုံး လိုအပ်ပါတယ်" });
         }
 
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         const existing = await User.findOne({ phone });
         if (existing) {
-            return res.status(400).json({ success: false, error: "ဒီဖုန်းနံပါတ်နဲ့ account ရှိပြီးသားပါ" });
+            // Phone ရှိပြီးသားဆိုရင် password + name ကို update လုပ်ပေးမယ် (reset account အနေနဲ့)
+            existing.name = name;
+            existing.password = hashedPassword;
+            await existing.save();
+
+            return res.status(200).json({
+                success: true,
+                message: "Account ကို အသစ် password နဲ့ update လုပ်ပြီးပါပြီ (reset success)"
+            });
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
         const user = new User({
             phone,
             name,
@@ -176,17 +188,30 @@ app.post('/api/auth/register', async (req, res) => {
 app.post('/api/auth/login', loginLimiter, async (req, res) => {
     try {
         const { phone, password } = req.body;
+        console.log("[AUTH] Login attempt", { phone });
+
         if (!phone || !password) {
+            console.warn("[AUTH] Login failed: missing phone or password", { phone });
             return res.status(400).json({ success: false, error: "Phone, password လိုအပ်ပါတယ်" });
         }
 
         const user = await User.findOne({ phone });
         if (!user) {
+            console.warn("[AUTH] Login failed: user not found", { phone });
             return res.status(404).json({ success: false, error: "User ရှာမတွေ့ပါ" });
+        }
+
+        if (typeof user.password !== 'string') {
+            console.error("[AUTH] Login failed: user has no valid password field", { phone, userId: user._id });
+            return res.status(500).json({
+                success: false,
+                error: "ဒီ account ကို ဟောင်း version နဲ့ ဖန်တီးထားလို့ Login မလုပ်နိုင်သေးဘူး. Phone အသစ်နဲ့ Register လုပ်ပေးပါ."
+            });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
+            console.warn("[AUTH] Login failed: password mismatch", { phone });
             return res.status(400).json({ success: false, error: "Password မှားနေတယ်" });
         }
 
@@ -195,6 +220,8 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
             JWT_SECRET,
             { expiresIn: '1d' }
         );
+
+        console.log("[AUTH] Login success", { phone });
 
         return res.json({
             success: true,
@@ -205,7 +232,7 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
             }
         });
     } catch (error) {
-        console.error("Login Error:", error);
+        console.error("[AUTH] Login unexpected error:", error);
         return res.status(500).json({ success: false, error: "Login လုပ်လို့မရပါ" });
     }
 });

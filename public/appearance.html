@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Appearance | Theme Shop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root { --c1:#00f2ff; --bg:#050508; }
+        body { margin:0; background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; padding:20px; }
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .theme-card { background: #111; border: 1px solid #222; padding: 20px; border-radius: 25px; text-align: center; cursor: pointer; transition: 0.3s; }
+        .theme-card:active { transform: scale(0.95); }
+        .color-preview { width: 50px; height: 50px; border-radius: 50%; margin: 0 auto 10px; border: 3px solid #fff; }
+        .price-tag { font-size: 12px; font-weight: 900; color: var(--c1); margin-top: 10px; }
+        .locked { filter: grayscale(1); opacity: 0.6; }
+    </style>
+</head>
+<body>
+    <div style="display:flex; align-items:center; gap:15px; margin-bottom:30px;">
+        <i class="fas fa-arrow-left" onclick="window.location.href='settings'" style="cursor:pointer"></i>
+        <h2 style="margin:0">Appearance</h2>
+    </div>
+
+    <div style="background:rgba(0,242,255,0.05); padding:15px; border-radius:15px; border:1px solid rgba(0,242,255,0.1); margin-bottom:20px;">
+        <i class="fas fa-coins" style="color:#ffd700"></i> My Points: <span id="my-points">999,999</span>
+    </div>
+
+    <div class="shop-grid">
+        <div class="theme-card" onclick="setTheme('cyan', 0)">
+            <div class="color-preview" style="background:#00f2ff"></div>
+            <div style="font-weight:bold">Neon Cyan</div>
+            <div class="price-tag">FREE</div>
+        </div>
+
+        <div class="theme-card" onclick="buyTheme('pink', 500)">
+            <div class="color-preview" style="background:#ff0055"></div>
+            <div style="font-weight:bold">Lava Pink</div>
+            <div class="price-tag">500 PTS</div>
+        </div>
+
+        <div class="theme-card" onclick="buyTheme('gold', 1000)">
+            <div class="color-preview" style="background:#ffd700"></div>
+            <div style="font-weight:bold">Royal Gold</div>
+            <div class="price-tag">1,000 PTS</div>
+        </div>
+    </div>
+
+    <script>
+        function setTheme(color, price) {
+            localStorage.setItem('app_theme', color);
+            alert("Theme Applied! 🚀");
+            window.location.href = 'dashboard';
+        }
+
+        function buyTheme(color, price) {
+            // Point စစ်တဲ့ Logic နောက်မှထပ်ထည့်မယ်၊ အခုတော့ ဝယ်လို့ရအောင်လုပ်ထားမယ်
+            if(confirm(`Buy this theme for ${price} points?`)) {
+                setTheme(color, price);
+            }
+        }
+    </script>
+</body>
+</html>

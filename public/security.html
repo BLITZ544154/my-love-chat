@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Security | Z-SPACE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root { --c1:#00f2ff; --bg:#050508; }
+        body { margin:0; background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; padding:20px; }
+        .card { background:#111; padding:25px; border-radius:30px; border:1px solid #222; margin-bottom:20px; }
+        label { display:block; font-size:11px; color:var(--c1); letter-spacing:2px; margin-bottom:8px; }
+        input { width:100%; background:#1a1a1a; border:1px solid #333; padding:15px; border-radius:15px; color:#fff; outline:none; box-sizing:border-box; margin-bottom:15px; }
+        .btn { width:100%; padding:15px; background:var(--c1); border:none; border-radius:15px; font-weight:900; cursor:pointer; }
+        .switch-box { display:flex; justify-content:space-between; align-items:center; }
+    </style>
+</head>
+<body>
+    <div style="display:flex; align-items:center; gap:15px; margin-bottom:30px;">
+        <i class="fas fa-arrow-left" onclick="window.location.href='settings'" style="cursor:pointer"></i>
+        <h2 style="margin:0">Security</h2>
+    </div>
+
+    <div class="card">
+        <label>CHANGE PASSWORD</label>
+        <input type="password" id="old-pass" placeholder="Current Password">
+        <input type="password" id="new-pass" placeholder="New Password">
+        <button class="btn" onclick="updatePass()">UPDATE PASSWORD</button>
+    </div>
+
+    <div class="card switch-box">
+        <div>
+            <div style="font-weight:900; font-size:15px;">2-Step Verification</div>
+            <div style="font-size:11px; color:#555;">Secure your account with 2FA</div>
+        </div>
+        <input type="checkbox" id="tfa-toggle" style="width:20px;" onchange="toggle2FA()">
+    </div>
+
+    <script>
+        // Load settings
+        document.getElementById('tfa-toggle').checked = localStorage.getItem('2fa_status') === 'enabled';
+
+        function updatePass() {
+            const np = document.getElementById('new-pass').value;
+            if(np.length < 6) return alert("Password must be at least 6 characters!");
+            localStorage.setItem('user_pass', np);
+            alert("Password updated successfully! 🔐");
+        }
+
+        function toggle2FA() {
+            const status = document.getElementById('tfa-toggle').checked ? 'enabled' : 'disabled';
+            localStorage.setItem('2fa_status', status);
+            alert("2FA has been " + status);
+        }
+    </script>
+</body>
+</html>

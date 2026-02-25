@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Device | Z-SPACE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root { --c1:#00f2ff; --bg:#050508; }
+        body { margin:0; background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; padding:20px; }
+        .device-item { background:#111; padding:20px; border-radius:20px; border:1px solid #222; display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; }
+        .kick-btn { background:#ff0055; color:#fff; border:none; padding:8px 15px; border-radius:10px; font-size:12px; font-weight:bold; cursor:pointer; }
+        .badge { background:var(--c1); color:#000; font-size:10px; padding:2px 8px; border-radius:5px; margin-left:10px; }
+    </style>
+</head>
+<body>
+    <div style="display:flex; align-items:center; gap:15px; margin-bottom:30px;">
+        <i class="fas fa-arrow-left" onclick="window.location.href='settings'" style="cursor:pointer"></i>
+        <h2 style="margin:0">About Device</h2>
+    </div>
+
+    <p style="font-size:12px; color:#555; margin-bottom:20px;">Logged in Devices</p>
+
+    <div id="device-list">
+        <div class="device-item">
+            <div>
+                <div style="font-weight:bold;"><i class="fas fa-mobile-alt"></i> Current Session <span class="badge">MAIN</span></div>
+                <div style="font-size:11px; color:#555;" id="ua-info">Loading...</div>
+            </div>
+        </div>
+
+        <div class="device-item" id="session-2">
+            <div>
+                <div style="font-weight:bold;"><i class="fas fa-laptop"></i> Windows Desktop</div>
+                <div style="font-size:11px; color:#555;">Chrome v121 • Yangon, MM</div>
+            </div>
+            <button class="kick-btn" onclick="kick('session-2')">KICK</button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('ua-info').innerText = navigator.userAgent.substring(0, 50) + "...";
+
+        function kick(id) {
+            if(confirm("Kick this device from your account?")) {
+                document.getElementById(id).style.display = 'none';
+                alert("Device disconnected! 🚀");
+            }
+        }
+    </script>
+</body>
+</html>

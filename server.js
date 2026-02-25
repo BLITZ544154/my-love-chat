@@ -5,6 +5,10 @@ const http = require('http');
 const { Server } = require('socket.io');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const path = require('path');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const { v2: cloudinary } = require('cloudinary');
 
 const app = express();
 const server = http.createServer(app);
@@ -14,74 +18,374 @@ const io = new Server(server, {
     cors: { origin: "*" }
 });
 
-app.use(express.json());
+// Static & security middlewares
+app.use(helmet());
+app.use(express.json({ limit: '5mb' }));
+app.use(express.static(path.join(__dirname, 'public')));
+
+// --- Environment & security ---
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    throw new Error("JWT_SECRET is required");
+}
+
+const MONGO_URI = process.env.MONGODB_URI;
+if (!MONGO_URI) {
+    throw new Error("MONGODB_URI is required");
+}
+
+const CLOUDINARY_URL = process.env.CLOUDINARY_URL;
+if (!CLOUDINARY_URL) {
+    throw new Error("CLOUDINARY_URL is required");
+}
+
+cloudinary.config({
+    secure: true
+});
+
+// Rate limiters (production hardening)
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+const sendLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 60,
+    standardHeaders: true,
+    legacyHeaders: false
+});
 
 // 1. Database Connection
-// .env ထဲမှာ MONGO_URI မရှိရင် local ကို သုံးမယ်
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/my_app_db';
 mongoose.connect(MONGO_URI)
     .then(() => console.log("✅ MongoDB ချိတ်ဆက်မှု အောင်မြင်သည်!"))
     .catch(err => console.error("❌ DB Error:", err));
 
-// 2. User Schema & Model (ဒေတာ သိမ်းမယ့် ပုံစံ)
+// 2. Schemas & Models
+// User Schema (phone ကို main identity အဖြစ် သုံးမယ်)
 const userSchema = new mongoose.Schema({
-    username: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true }
-});
+    phone: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
+    password: { type: String, required: true },
+    avatar: { type: String },
+    bio: { type: String },
+    wallet: {
+        balance: { type: Number, default: 0 }
+    },
+    isVerified: { type: Boolean, default: false },
+    settings: {
+        notiSound: { type: Boolean, default: true },
+        privacy: {
+            showNumber: { type: Boolean, default: true }
+        }
+    }
+}, { timestamps: true });
+
 const User = mongoose.model('User', userSchema);
 
-// 3. Register Route (အကောင့်သစ်ဖွင့်ရန်)
-app.post('/api/register', async (req, res) => {
+// Message Schema (per conversation, scalable index)
+const messageSchema = new mongoose.Schema({
+    conversationId: { type: String, index: true },
+    senderPhone: { type: String, required: true, index: true },
+    receiverPhone: { type: String, required: true, index: true },
+    text: { type: String, required: true },
+    type: { type: String, enum: ['text', 'audio'], default: 'text' }
+}, { timestamps: true });
+
+messageSchema.index({ conversationId: 1, createdAt: -1 });
+
+const Message = mongoose.model('Message', messageSchema);
+
+// Helper: stable conversation id for two phones
+function getConversationId(a, b) {
+    return [a, b].sort().join(':');
+}
+
+// Helper: upload base64 data URL to Cloudinary and return secure URL
+async function uploadBase64ToCloudinary(dataUrl, options) {
+    return new Promise((resolve, reject) => {
+        cloudinary.uploader.upload(
+            dataUrl,
+            options,
+            (error, result) => {
+                if (error) return reject(error);
+                return resolve(result.secure_url);
+            }
+        );
+    });
+}
+
+// --- Auth middleware ---
+function requireAuth(req, res, next) {
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    if (!token) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
     try {
-        const { username, email, password } = req.body;
-        
-        // Password ကို Hash လုပ်မယ် (လုံခြုံရေးအတွက်)
+        const payload = jwt.verify(token, JWT_SECRET);
+        req.user = { id: payload.id, phone: payload.phone };
+        next();
+    } catch (err) {
+        return res.status(401).json({ error: 'Invalid token' });
+    }
+}
+
+// 3. Auth Routes (phone-based, frontend တွေနဲ့ ကိုက်ညီအောင်)
+app.post('/api/auth/register', async (req, res) => {
+    try {
+        const { phone, password, name } = req.body;
+        if (!phone || !password || !name) {
+            return res.status(400).json({ success: false, error: "Phone, name, password လိုအပ်ပါတယ်" });
+        }
+        if (password.length < 6) {
+            return res.status(400).json({ success: false, error: "Password အနည်းဆုံး 6 လုံး လိုအပ်ပါတယ်" });
+        }
+
+        const existing = await User.findOne({ phone });
+        if (existing) {
+            return res.status(400).json({ success: false, error: "ဒီဖုန်းနံပါတ်နဲ့ account ရှိပြီးသားပါ" });
+        }
+
         const hashedPassword = await bcrypt.hash(password, 10);
-        
-        const newUser = new User({ username, email, password: hashedPassword });
-        await newUser.save();
-        
-        res.status(201).json({ message: "User Register အောင်မြင်ပါတယ် သာကြီး!" });
+        const user = new User({
+            phone,
+            name,
+            password: hashedPassword
+        });
+        await user.save();
+
+        return res.status(201).json({ success: true, message: "Account ဖန်တီးပြီးပါပြီ" });
     } catch (error) {
-        res.status(500).json({ error: "Register လုပ်လို့မရပါ (Email တူနေတာ ဖြစ်နိုင်တယ်)" });
+        console.error("Register Error:", error);
+        return res.status(500).json({ success: false, error: "Register လုပ်လို့မရပါ" });
     }
 });
 
-// 4. Login Route (အကောင့်ဝင်ရန်)
-app.post('/api/login', async (req, res) => {
+app.post('/api/auth/login', loginLimiter, async (req, res) => {
     try {
-        const { email, password } = req.body;
-        const user = await User.findOne({ email });
-        
-        if (!user) return res.status(404).json({ error: "User ရှာမတွေ့ပါ" });
+        const { phone, password } = req.body;
+        if (!phone || !password) {
+            return res.status(400).json({ success: false, error: "Phone, password လိုအပ်ပါတယ်" });
+        }
+
+        const user = await User.findOne({ phone });
+        if (!user) {
+            return res.status(404).json({ success: false, error: "User ရှာမတွေ့ပါ" });
+        }
 
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ error: "Password မှားနေတယ် သာကြီး" });
+        if (!isMatch) {
+            return res.status(400).json({ success: false, error: "Password မှားနေတယ်" });
+        }
 
-        // JWT Token ထုတ်ပေးမယ်
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'secret123', { expiresIn: '1d' });
-        
-        res.json({ message: "Login အောင်မြင်တယ်!", token, user: { username: user.username, email: user.email } });
+        const token = jwt.sign(
+            { id: user._id.toString(), phone: user.phone },
+            JWT_SECRET,
+            { expiresIn: '1d' }
+        );
+
+        return res.json({
+            success: true,
+            token,
+            user: {
+                phone: user.phone,
+                name: user.name
+            }
+        });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error("Login Error:", error);
+        return res.status(500).json({ success: false, error: "Login လုပ်လို့မရပါ" });
     }
 });
 
-// 5. Socket.io Real-time Connection
+// 4. User Profile APIs
+app.get('/api/user/:phone', requireAuth, async (req, res) => {
+    try {
+        const user = await User.findOne({ phone: req.params.phone }).lean();
+        if (!user) {
+            return res.status(404).json(null);
+        }
+        return res.json({
+            phone: user.phone,
+            name: user.name,
+            avatar: user.avatar,
+            bio: user.bio,
+            wallet: user.wallet,
+            isVerified: user.isVerified
+        });
+    } catch (error) {
+        console.error("Get User Error:", error);
+        return res.status(500).json({ error: "Server error" });
+    }
+});
+
+app.post('/api/user/update', requireAuth, async (req, res) => {
+    try {
+        const { name, bio, avatar } = req.body;
+        const phoneFromToken = req.user.phone;
+
+        const updateDoc = { name, bio };
+
+        if (avatar) {
+            let avatarToSave = avatar;
+            if (typeof avatar === 'string' && avatar.startsWith('data:')) {
+                avatarToSave = await uploadBase64ToCloudinary(avatar, {
+                    folder: 'zspace/avatars',
+                    resource_type: 'image'
+                });
+            }
+            updateDoc.avatar = avatarToSave;
+        }
+
+        const updated = await User.findOneAndUpdate(
+            { phone: phoneFromToken },
+            { $set: updateDoc },
+            { new: true }
+        ).lean();
+
+        if (!updated) {
+            return res.status(404).json({ error: "User မတွေ့ပါ" });
+        }
+
+        return res.json({
+            success: true,
+            user: {
+                phone: updated.phone,
+                name: updated.name,
+                avatar: updated.avatar,
+                bio: updated.bio
+            }
+        });
+    } catch (error) {
+        console.error("Update User Error:", error);
+        return res.status(500).json({ success: false, error: "Update လုပ်လို့မရပါ" });
+    }
+});
+
+// 5. Messaging APIs (optimized basic version + pagination)
+app.get('/api/messages/:me/:peer', requireAuth, async (req, res) => {
+    try {
+        const { me, peer } = req.params;
+        if (req.user.phone !== me) {
+            return res.status(403).json({ error: "Forbidden" });
+        }
+        const conversationId = getConversationId(me, peer);
+
+        const { limit = 50, before } = req.query;
+        const numericLimit = Math.min(parseInt(limit, 10) || 50, 100);
+
+        const query = { conversationId };
+        if (before) {
+            const beforeDate = new Date(before);
+            if (!isNaN(beforeDate.getTime())) {
+                query.createdAt = { $lt: beforeDate };
+            }
+        }
+
+        let messages = await Message.find(query)
+            .sort({ createdAt: -1 })
+            .limit(numericLimit)
+            .lean();
+
+        // client wants oldest -> newest
+        messages = messages.reverse();
+
+        return res.json(
+            messages.map(m => ({
+                sender: m.senderPhone,
+                receiver: m.receiverPhone,
+                text: m.text,
+                type: m.type,
+                createdAt: m.createdAt
+            }))
+        );
+    } catch (error) {
+        console.error("Get Messages Error:", error);
+        return res.status(500).json({ error: "Server error" });
+    }
+});
+
+app.post('/api/send', sendLimiter, requireAuth, async (req, res) => {
+    try {
+        const senderPhone = req.user.phone;
+        const { receiver, text } = req.body || {};
+
+        if (!receiver || !text) {
+            return res.status(400).json({ error: "receiver, text လိုအပ်ပါတယ်" });
+        }
+
+        let type = 'text';
+        let storedText = text;
+
+        if (String(text).startsWith('data:audio')) {
+            type = 'audio';
+            storedText = await uploadBase64ToCloudinary(text, {
+                folder: 'zspace/voice',
+                resource_type: 'video'
+            });
+        }
+
+        const conversationId = getConversationId(senderPhone, receiver);
+
+        const msg = await Message.create({
+            conversationId,
+            senderPhone,
+            receiverPhone: receiver,
+            text: storedText,
+            type
+        });
+
+        const payload = {
+            sender: msg.senderPhone,
+            receiver: msg.receiverPhone,
+            text: msg.text,
+            type: msg.type,
+            createdAt: msg.createdAt
+        };
+
+        // Emit only to sender & receiver private rooms
+        io.to(senderPhone).to(receiver).emit('new-message', payload);
+
+        return res.status(201).json({ success: true, message: payload });
+    } catch (error) {
+        console.error("Send Message Error:", error);
+        return res.status(500).json({ success: false, error: "Message မပို့နိုင်ပါ" });
+    }
+});
+
+// 6. Socket.io Real-time Connection with JWT auth & private rooms
+io.use((socket, next) => {
+    try {
+        const token = socket.handshake.auth && socket.handshake.auth.token;
+        if (!token) {
+            return next(new Error('Unauthorized'));
+        }
+        const payload = jwt.verify(token, JWT_SECRET);
+        socket.user = { id: payload.id, phone: payload.phone };
+        return next();
+    } catch (err) {
+        return next(new Error('Unauthorized'));
+    }
+});
+
 io.on('connection', (socket) => {
-    console.log(`⚡ User တစ်ယောက် ချိတ်လာပြီ: ${socket.id}`);
-    
-    socket.on('send_message', (data) => {
-        io.emit('receive_message', data); // အားလုံးဆီ စာပြန်ပို့မယ်
-    });
+    const userPhone = socket.user && socket.user.phone;
+    if (userPhone) {
+        socket.join(userPhone);
+        console.log(`⚡ User ${userPhone} connected with socket ${socket.id}`);
+    } else {
+        console.log(`⚡ Unidentified socket connected: ${socket.id}`);
+    }
 
     socket.on('disconnect', () => {
         console.log("🔥 User ထွက်သွားပြီ");
     });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`🚀 Server က http://localhost:${PORT} မှာ အလုပ်လုပ်နေပြီ`);
+    console.log(`🚀 Server is running on port ${PORT}`);
 });

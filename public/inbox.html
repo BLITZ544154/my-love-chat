@@ -54,7 +54,11 @@
     </div>
 
     <script>
-        const socket = io();
+        const socket = io({
+            auth: {
+                token: localStorage.getItem('token')
+            }
+        });
         const myPhone = localStorage.getItem('user_phone');
         if(!myPhone) window.location.href = '/';
         const peerPhone = new URLSearchParams(window.location.search).get('user');
@@ -62,11 +66,17 @@
         let mediaRecorder;
         let audioChunks = [];
         let currentStream;
-
-        socket.emit('join-room', myPhone);
+        let oldestTimestamp = null;
+        let loadingOlder = false;
+        let hasMore = true;
 
         async function init() {
-            const res = await fetch(`/api/user/${peerPhone}`);
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/user/${peerPhone}`, {
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : ''
+                }
+            });
             const user = await res.json();
             if(user) {
                 document.getElementById('peer-name').innerText = user.name;
@@ -81,38 +91,82 @@
             }
         });
 
-        function appendMessage(m) {
+        function appendMessage(m, prepend = false) {
             const box = document.getElementById('chat-box');
             const isMe = m.sender === myPhone;
             const div = document.createElement('div');
             div.className = `msg ${isMe ? 'me' : 'other'}`;
             
-            if(m.text.startsWith('data:audio')) {
+            if(m.type === 'audio') {
                 div.innerHTML = `<audio controls style="height:35px; width:180px;"><source src="${m.text}"></audio>`;
             } else {
                 div.innerText = m.text;
             }
-            box.appendChild(div);
-            box.scrollTop = box.scrollHeight;
+            if (prepend && box.firstChild) {
+                box.insertBefore(div, box.firstChild);
+            } else {
+                box.appendChild(div);
+            }
+            if (!prepend) {
+                box.scrollTop = box.scrollHeight;
+            }
         }
 
-        async function loadMsgs() {
-            const res = await fetch(`/api/messages/${myPhone}/${peerPhone}`);
+        async function loadMsgs(before = null, prepend = false) {
+            const token = localStorage.getItem('token');
+            let url = `/api/messages/${myPhone}/${peerPhone}`;
+            if (before) {
+                url += `?before=${encodeURIComponent(before)}`;
+            }
+            const res = await fetch(url, {
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : ''
+                }
+            });
             const data = await res.json();
-            document.getElementById('chat-box').innerHTML = '';
-            data.forEach(appendMessage);
+            const box = document.getElementById('chat-box');
+
+            if (!prepend) {
+                box.innerHTML = '';
+                oldestTimestamp = null;
+                hasMore = true;
+            }
+
+            if (!Array.isArray(data) || data.length === 0) {
+                if (prepend) hasMore = false;
+                return;
+            }
+
+            if (!oldestTimestamp || new Date(data[0].createdAt) < new Date(oldestTimestamp)) {
+                oldestTimestamp = data[0].createdAt;
+            }
+
+            if (prepend) {
+                const prevScrollHeight = box.scrollHeight;
+                for (let i = data.length - 1; i >= 0; i--) {
+                    appendMessage(data[i], true);
+                }
+                const newScrollHeight = box.scrollHeight;
+                box.scrollTop = newScrollHeight - prevScrollHeight;
+            } else {
+                data.forEach((m) => appendMessage(m));
+            }
         }
 
         async function sendText() {
             const input = document.getElementById('msg-input');
             const text = input.value.trim();
             if(!text) return;
-            const msgData = { sender: myPhone, receiver: peerPhone, text: text };
+            const msgData = { receiver: peerPhone, text: text };
             
             input.value = '';
+            const token = localStorage.getItem('token');
             await fetch('/api/send', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? `Bearer ${token}` : ''
+                },
                 body: JSON.stringify(msgData)
             });
         }
@@ -131,10 +185,14 @@
                     const reader = new FileReader();
                     reader.readAsDataURL(audioBlob);
                     reader.onloadend = async () => {
+                        const token = localStorage.getItem('token');
                         await fetch('/api/send', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ sender: myPhone, receiver: peerPhone, text: reader.result })
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'Authorization': token ? `Bearer ${token}` : ''
+                            },
+                            body: JSON.stringify({ receiver: peerPhone, text: reader.result })
                         });
                     };
                     // မိုက်ခရိုဖုန်းကို ပြန်ပိတ်မယ်
@@ -157,6 +215,18 @@
         socket.on('incoming-call', (data) => {
             if(confirm(`Incoming ${data.type} call from ${data.name || data.from}. Accept?`)) {
                 window.location.href = `call.html?user=${data.from}&caller=false`;
+            }
+        });
+
+        const chatBox = document.getElementById('chat-box');
+        chatBox.addEventListener('scroll', async () => {
+            if (chatBox.scrollTop === 0 && !loadingOlder && hasMore && oldestTimestamp) {
+                loadingOlder = true;
+                try {
+                    await loadMsgs(oldestTimestamp, true);
+                } finally {
+                    loadingOlder = false;
+                }
             }
         });
 

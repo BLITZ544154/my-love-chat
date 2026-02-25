@@ -73,7 +73,12 @@
 
         async function loadProfile() {
             try {
-                const res = await fetch(`/api/user/${phone}`);
+                const token = localStorage.getItem('token');
+                const res = await fetch(`/api/user/${phone}`, {
+                    headers: {
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    }
+                });
                 if (!res.ok) throw new Error("User not found");
                 
                 const user = await res.json();

@@ -59,7 +59,11 @@
     <audio id="ringtone" src="https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3" loop></audio>
 
     <script>
-        const socket = io();
+        const socket = io({
+            auth: {
+                token: localStorage.getItem('token')
+            }
+        });
         const myPhone = localStorage.getItem('user_phone');
         const params = new URLSearchParams(window.location.search);
         const peerPhone = params.get('user');
@@ -82,10 +86,13 @@
                 document.getElementById('local-video').srcObject = localStream;
                 if(callType === 'voice') document.getElementById('local-video').style.display = 'none';
 
-                socket.emit('join-room', myPhone);
-
                 // တစ်ဖက်လူရဲ့ Info ကို ဆွဲမယ်
-                const res = await fetch(`/api/user/${peerPhone}`);
+                const token = localStorage.getItem('token');
+                const res = await fetch(`/api/user/${peerPhone}`, {
+                    headers: {
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    }
+                });
                 const userData = await res.json();
                 if(userData) {
                     const name = userData.name || peerPhone;

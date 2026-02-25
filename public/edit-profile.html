@@ -41,7 +41,12 @@
         let base64Img = "";
 
         window.onload = async () => {
-            const res = await fetch(`/api/user/${phone}`);
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/user/${phone}`, {
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : ''
+                }
+            });
             const user = await res.json();
             if(user) {
                 document.getElementById('name').value = user.name || "";
@@ -68,9 +73,13 @@
                 bio: document.getElementById('bio').value,
                 avatar: base64Img
             };
+            const token = localStorage.getItem('token');
             await fetch('/api/user/update', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? `Bearer ${token}` : ''
+                },
                 body: JSON.stringify(data)
             });
             alert("Profile Updated! ✅");

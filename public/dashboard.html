@@ -9,18 +9,18 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root { --c1:#00f2ff; --c2:#ff0055; --bg:#050508; }
-        body { margin:0; background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; display:flex; flex-direction:column; align-items:center; min-height:100vh; padding:20px; }
+        body { margin:0; background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; display:flex; flex-direction:column; align-items:center; min-height:100vh; padding:20px; transition: 0.5s; }
         
         .profile-card { background:#111; width:340px; padding:60px 20px 40px; border-radius:40px; text-align:center; border:1px solid #222; position:relative; overflow:hidden; }
         .cover-bg { position:absolute; top:0; left:0; width:100%; height:140px; background:linear-gradient(to bottom, rgba(0,242,255,0.1), transparent); z-index:0; object-fit: cover; }
         .settings-btn { position:absolute; top:20px; right:20px; width:40px; height:40px; background:rgba(255,255,255,0.05); border-radius:12px; display:flex; justify-content:center; align-items:center; border:1px solid rgba(255,255,255,0.1); cursor:pointer; z-index:10; }
 
-        /* Avatar Animation Fix */
-        .avatar-wrapper { width:120px; height:120px; margin:0 auto 20px; position:relative; z-index:1; padding:4px; border-radius:50%; background:conic-gradient(from 0deg, var(--c1), var(--c2), var(--c1)); animation:rotateFrame 3s linear infinite; }
-        @keyframes rotateFrame { 100% { transform:rotate(360deg); } }
-        
-        .avatar-inner { width:100%; height:100%; background:#000; border-radius:50%; padding:2px; display:flex; justify-content:center; align-items:center; transform: rotate(0deg) !important; }
-        .avatar-inner img { width:100%; height:100%; border-radius:50%; object-fit:cover; transform: rotate(0deg) !important; }
+        /* Avatar Fix: ပုံကို ငြိမ်စေပြီး ဘောင်ကိုပဲ လည်စေမယ် */
+        .avatar-container { position: relative; width: 130px; height: 130px; margin: 0 auto 20px; display: flex; justify-content: center; align-items: center; z-index: 1; }
+        .rotating-border { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(from 0deg, var(--c1), var(--c2), var(--c1)); animation: rotateFrame 3s linear infinite; z-index: 1; }
+        @keyframes rotateFrame { 100% { transform: rotate(360deg); } }
+        .avatar-static { position: relative; width: 115px; height: 115px; background: #000; border-radius: 50%; z-index: 2; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        .avatar-static img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 
         .user-name { font-size:24px; font-weight:900; color:#ffd700; text-shadow:0 0 15px rgba(255,215,0,0.5); margin:10px 0; }
         .user-handle { font-size:12px; color: var(--c1); margin-top: -10px; margin-bottom: 10px; display: block; opacity: 0.8; }
@@ -33,10 +33,15 @@
     <div class="profile-card">
         <div class="cover-bg" id="current-bg"></div>
         <div class="settings-btn" onclick="window.location.href='settings'"><i class="fas fa-cog"></i></div>
-        <div class="avatar-wrapper"><div class="avatar-inner"><img src="B L I T Z.jpg" id="main-avatar"></div></div>
+        
+        <div class="avatar-container">
+            <div class="rotating-border"></div>
+            <div class="avatar-static"><img src="B L I T Z.jpg" id="main-avatar"></div>
+        </div>
+
         <h2 class="user-name" id="display-name">Loading...</h2>
         <span class="user-handle" id="display-handle">@username</span>
-        <p class="user-bio" id="display-bio">No bio yet.</p>
+        <p class="user-bio" id="display-bio">Z-SPACE User</p>
         <div class="stats-box"><i class="fas fa-coins" style="color:#ffd700"></i> Points: 999,999</div>
         <div style="margin-top:25px;"><lottie-player src="kkk.json" background="transparent" speed="1" style="width: 50px; height: 50px; margin: auto;" loop autoplay></lottie-player></div>
     </div>
@@ -46,9 +51,14 @@
         const syncProfile = () => {
             document.getElementById('display-name').innerText = localStorage.getItem('glow_user') || "Guest User";
             document.getElementById('display-handle').innerText = localStorage.getItem('user_handle') ? "@" + localStorage.getItem('user_handle') : "@username";
-            document.getElementById('display-bio').innerText = localStorage.getItem('user_bio') || "Z-SPACE User";
+            document.getElementById('display-bio').innerText = localStorage.getItem('user_bio') || "Hey there!";
             if(localStorage.getItem('user_avatar')) document.getElementById('main-avatar').src = localStorage.getItem('user_avatar');
             if(localStorage.getItem('user_bg')) document.getElementById('current-bg').style.background = `url(${localStorage.getItem('user_bg')}) center/cover`;
+            
+            // Apply Saved Theme
+            const theme = localStorage.getItem('app_theme') || 'cyan';
+            if(theme === 'pink') document.documentElement.style.setProperty('--c1', '#ff0055');
+            if(theme === 'gold') document.documentElement.style.setProperty('--c1', '#ffd700');
         };
         syncProfile();
     </script>

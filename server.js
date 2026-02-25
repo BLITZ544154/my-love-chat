@@ -12,4 +12,4 @@ app.get('/edit-profile', (req, res) => { res.sendFile(path.join(__dirname, 'publ
 
 app.use((req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 
-app.listen(port, () => { console.log(`Z-SPACE Live on ${port}`); });
+app.listen(port, () => { console.log(`Z-SPACE Active on ${port}`); });

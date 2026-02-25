@@ -16,18 +16,20 @@ const server = http.createServer(app);
 app.set('trust proxy', 1);
 
 const io = new Server(server, {
-    cors: { origin: "*" }
+    cors: { 
+        origin: "*", 
+        methods: ["GET", "POST"]
+    }
 });
 
-// Content Security Policy ကို Video Call အတွက် လိုအပ်တာတွေ ထပ်ဖြည့်ထားတယ်
+// Content Security Policy ကို Video Call အတွက် အကောင်းဆုံးပြင်ဆင်ထားသည်
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             ...helmet.contentSecurityPolicy.getDefaultDirectives(),
             "script-src": ["'self'", "'unsafe-inline'", "https://unpkg.com"],
-            "script-src-attr": ["'self'", "'unsafe-inline'"],
             "img-src": ["'self'", "data:", "res.cloudinary.com", "via.placeholder.com", "https://api.dicebear.com"],
-            "connect-src": ["'self'", "https://res.cloudinary.com", "wss://my-love-chat.onrender.com", "https://assets.mixkit.co"],
+            "connect-src": ["'self'", "https://res.cloudinary.com", "wss://*", "https://assets.mixkit.co"],
             "media-src": ["'self'", "data:", "blob:", "https://assets.mixkit.co"],
         },
     },
@@ -113,6 +115,15 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Login failed" }); }
 });
 
+// User ရှာရန် API (New)
+app.get('/api/search/:phone', requireAuth, async (req, res) => {
+    try {
+        const user = await User.findOne({ phone: req.params.phone }).select('name phone avatar bio');
+        if (!user) return res.status(404).json({ error: "User not found" });
+        res.json(user);
+    } catch (e) { res.status(500).json({ error: "Search failed" }); }
+});
+
 app.get('/api/user/:phone', requireAuth, async (req, res) => {
     try {
         const user = await User.findOne({ phone: req.params.phone }).select('-password');
@@ -138,7 +149,7 @@ app.get('/api/conversations', requireAuth, async (req, res) => {
                 const peerUser = await User.findOne({ phone: peer }).select('name avatar');
                 convs.push({
                     phone: peer,
-                    name: peerUser ? peerUser.name : "Unknown",
+                    name: peerUser ? peerUser.name : "User " + peer,
                     avatar: peerUser ? peerUser.avatar : null,
                     lastMsg: m.type === 'audio' ? '🎵 Voice message' : m.text,
                     time: m.createdAt,
@@ -185,7 +196,7 @@ app.use((req, res, next) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// --- Socket.io Logic (Call Signaling ပါဝင်သည်) ---
+// --- Socket.io Logic ---
 io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
     if (!token) return next(new Error('Auth error'));
@@ -200,7 +211,7 @@ io.on('connection', (socket) => {
     socket.join(myPhone);
     console.log(`⚡ User Online: ${myPhone}`);
 
-    // Call Events
+    // Call Events (WebRTC Signaling)
     socket.on('call-user', (data) => {
         io.to(data.userToCall).emit('incoming-call', { 
             signal: data.signalData, 
@@ -222,7 +233,10 @@ io.on('connection', (socket) => {
     });
 
     socket.on('mark_seen', async (data) => {
-        await Message.updateMany({ conversationId: getConversationId(myPhone, data.sender), receiverPhone: myPhone }, { isSeen: true });
+        await Message.updateMany({ 
+            conversationId: getConversationId(myPhone, data.sender), 
+            receiverPhone: myPhone 
+        }, { isSeen: true });
         socket.to(data.sender).emit('messages_read', { by: myPhone });
     });
 

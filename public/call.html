@@ -11,20 +11,20 @@
         :root { --primary: #00f2ff; --danger: #ff4b2b; --bg: #050508; }
         body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         .call-screen { position: relative; flex: 1; display: flex; justify-content: center; align-items: center; background: #000; }
-        #remote-video { width: 100%; height: 100%; object-fit: cover; }
-        #local-video { position: absolute; top: 20px; right: 20px; width: 110px; height: 150px; border-radius: 12px; border: 2px solid var(--primary); object-fit: cover; background: #222; z-index: 10; transition: 0.3s; }
+        #remote-video { width: 100%; height: 100%; object-fit: cover; background: #111; }
+        #local-video { position: absolute; top: 20px; right: 20px; width: 110px; height: 150px; border-radius: 12px; border: 2px solid var(--primary); object-fit: cover; background: #222; z-index: 10; }
         
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 20; }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); z-index: 20; }
         .peer-avatar { width: 120px; height: 120px; border-radius: 50%; border: 3px solid var(--primary); margin-bottom: 20px; object-fit: cover; box-shadow: 0 0 20px var(--primary); }
         .status-text { font-size: 16px; color: var(--primary); letter-spacing: 2px; text-transform: uppercase; animation: pulse 1.5s infinite; }
         
         .controls { position: absolute; bottom: 40px; display: flex; gap: 20px; z-index: 30; }
-        .btn { width: 60px; height: 60px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; transition: 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        .btn-hangup { background: var(--danger); color: white; }
-        .btn-mute { background: rgba(255,255,255,0.15); color: white; backdrop-filter: blur(10px); }
-        .btn-mute.active { background: var(--primary); color: black; }
+        .btn { width: 60px; height: 60px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; transition: 0.3s; color: white; }
+        .btn-hangup { background: var(--danger); }
+        .btn-mute { background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); }
         .btn-accept { background: #00ff88; color: black; }
         .btn:active { transform: scale(0.9); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
     </style>
 </head>
@@ -36,10 +36,10 @@
 
         <div id="incoming-overlay" class="overlay" style="display: none;">
             <img id="caller-img" src="https://via.placeholder.com/150" class="peer-avatar">
-            <h3 id="caller-name">Unknown User</h3>
+            <h3 id="caller-name">Unknown</h3>
             <p class="status-text">Incoming Call...</p>
             <div class="controls">
-                <button class="btn btn-accept" onclick="answerCall()"><i class="fas fa-phone"></i></button>
+                <button id="accept-btn" class="btn btn-accept" onclick="answerCall()" disabled><i class="fas fa-phone"></i></button>
                 <button class="btn btn-hangup" onclick="endCall()"><i class="fas fa-phone-slash"></i></button>
             </div>
         </div>
@@ -74,36 +74,48 @@
         let localStream;
         let peer;
         let incomingSignalData;
-        let screenStream;
 
         async function init() {
+            if (!peerPhone) {
+                alert("No user specified!");
+                return window.location.href = '/messages';
+            }
+
             try {
+                // ၁။ Media အရင်ယူမယ်
                 localStream = await navigator.mediaDevices.getUserMedia({ 
                     video: callType === 'video', 
                     audio: true 
                 });
                 document.getElementById('local-video').srcObject = localStream;
+                
+                // Media ရပြီဆိုမှ ခလုတ်ကို နှိပ်ခွင့်ပေးမယ်
+                const acceptBtn = document.getElementById('accept-btn');
+                if(acceptBtn) acceptBtn.disabled = false;
 
+                // ၂။ တစ်ဖက်လူ အချက်အလက်ယူမယ်
                 const res = await fetch(`/api/user/${peerPhone}`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
                 const userData = await res.json();
                 if(userData) {
                     const name = userData.name || peerPhone;
-                    const img = userData.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=" + peerPhone;
+                    const img = userData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${peerPhone}`;
                     document.getElementById('peer-name-call').innerText = name;
                     document.getElementById('caller-name').innerText = name;
                     document.getElementById('peer-img-call').src = img;
                     document.getElementById('caller-img').src = img;
                 }
 
+                // ၃။ ခေါ်တဲ့လူဆိုရင် စခေါ်မယ်
                 if (isCaller) {
                     document.getElementById('outgoing-overlay').style.display = 'flex';
                     startCall();
                 }
+
             } catch (err) {
-                console.error(err);
-                alert("Please enable Camera/Mic!");
+                console.error("Init Error:", err);
+                alert("Camera/Mic access is required!");
                 window.location.href = '/messages';
             }
         }
@@ -122,18 +134,21 @@
                 document.getElementById('remote-video').srcObject = stream;
                 hideOverlays();
             });
+            peer.on('error', err => console.log('Peer Error:', err));
         }
 
         socket.on('incoming-call', (data) => {
-            if (!isCaller && data.from === peerPhone) {
+            if (data.from === peerPhone) {
                 incomingSignalData = data.signal;
                 document.getElementById('incoming-overlay').style.display = 'flex';
-                document.getElementById('ringtone').play();
+                document.getElementById('ringtone').play().catch(e => console.log("Audio play failed"));
             }
         });
 
         function answerCall() {
+            if (!incomingSignalData) return;
             document.getElementById('ringtone').pause();
+            
             peer = new SimplePeer({ initiator: false, trickle: false, stream: localStream });
             peer.on('signal', signal => {
                 socket.emit('answer-call', { signal, to: peerPhone });
@@ -152,10 +167,10 @@
 
         async function shareScreen() {
             try {
-                screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
                 const screenTrack = screenStream.getVideoTracks()[0];
                 
-                if (peer) {
+                if (peer && peer._pc) {
                     const videoSender = peer._pc.getSenders().find(s => s.track.kind === 'video');
                     if (videoSender) videoSender.replaceTrack(screenTrack);
                 }
@@ -163,9 +178,9 @@
                 document.getElementById('local-video').srcObject = screenStream;
                 screenTrack.onended = () => {
                     const videoTrack = localStream.getVideoTracks()[0];
-                    if (peer) {
+                    if (peer && peer._pc) {
                         const videoSender = peer._pc.getSenders().find(s => s.track.kind === 'video');
-                        videoSender.replaceTrack(videoTrack);
+                        if (videoSender) videoSender.replaceTrack(videoTrack);
                     }
                     document.getElementById('local-video').srcObject = localStream;
                 };
@@ -185,19 +200,27 @@
         }
 
         function hideOverlays() {
-            document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none');
+            document.getElementById('incoming-overlay').style.display = 'none';
+            document.getElementById('outgoing-overlay').style.display = 'none';
             document.getElementById('ongoing-controls').style.display = 'flex';
         }
 
         function endCall() {
             socket.emit('end-call', { to: peerPhone });
-            location.href = '/messages';
+            stopStream();
+            window.location.href = '/messages';
         }
 
         socket.on('call-ended', () => {
-            location.href = '/messages';
+            stopStream();
+            window.location.href = '/messages';
         });
 
+        function stopStream() {
+            if (localStream) localStream.getTracks().forEach(t => t.stop());
+        }
+
+        // စတင်မယ်
         init();
     </script>
 </body>

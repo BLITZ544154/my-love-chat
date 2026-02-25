@@ -3,66 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Z-SPACE</title>
+    <title>Welcome | Z-SPACE</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root { --primary: #00f2ff; --bg: #050508; }
-        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; height: 100vh; display: flex; justify-content: center; align-items: center; }
-        
-        .login-box { width: 320px; text-align: center; padding: 40px 20px; }
-        .logo { font-size: 80px; color: var(--primary); margin-bottom: 20px; text-shadow: 0 0 20px rgba(0, 242, 255, 0.3); }
-        
-        h2 { margin-bottom: 10px; font-size: 24px; }
-        p { color: #555; font-size: 14px; margin-bottom: 30px; }
-
-        .input-group { background: #111; border-radius: 15px; padding: 15px; display: flex; align-items: center; gap: 10px; border: 1px solid #222; margin-bottom: 20px; }
-        .input-group i { color: #444; }
-        .input-group input { background: none; border: none; color: white; outline: none; width: 100%; font-size: 16px; }
-
-        .start-btn { 
-            width: 100%; background: var(--primary); color: black; border: none; 
-            padding: 18px; border-radius: 15px; font-weight: bold; font-size: 16px; 
-            cursor: pointer; transition: 0.3s; box-shadow: 0 5px 15px rgba(0, 242, 255, 0.2);
-        }
-        .start-btn:hover { transform: translateY(-3px); background: #00d2ff; }
+        body { background: var(--bg); color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .auth-box { width: 320px; background: #0d1117; padding: 40px; border-radius: 30px; border: 1px solid #222; text-align: center; box-shadow: 0 0 20px rgba(0,242,255,0.05); }
+        .logo { font-size: 40px; color: var(--primary); margin-bottom: 20px; text-shadow: 0 0 15px var(--primary); }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #161b22; border: 1px solid #333; border-radius: 12px; color: white; outline: none; box-sizing: border-box; transition: 0.3s; }
+        input:focus { border-color: var(--primary); }
+        button { width: 100%; padding: 14px; margin-top: 15px; background: var(--primary); border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; color: black; }
+        button:hover { transform: scale(1.02); opacity: 0.9; }
+        .toggle { font-size: 12px; margin-top: 15px; color: #555; cursor: pointer; transition: 0.2s; }
+        .toggle:hover { color: var(--primary); }
     </style>
 </head>
 <body>
-
-    <div class="login-box">
-        <div class="logo"><i class="fab fa-telegram-plane"></i></div>
-        <h2>Z-SPACE</h2>
-        <p>The safest and fastest chat engine.</p>
-
-        <div class="input-group">
-            <i class="fas fa-phone-alt"></i>
-            <input type="text" id="phone" placeholder="Your Phone Number" onkeypress="if(event.key==='Enter') start()">
-        </div>
-
-        <button class="start-btn" onclick="start()">START MESSAGING</button>
+    <div class="auth-box">
+        <div class="logo"><i class="fas fa-atom"></i></div>
+        <h2 id="auth-title">Z-SPACE LOGIN</h2>
+        
+        <input type="text" id="phone" placeholder="Phone Number">
+        <input type="text" id="name" placeholder="Full Name" style="display:none;">
+        <input type="password" id="password" placeholder="Password">
+        
+        <button onclick="handleAuth()" id="btn-text">SIGN IN</button>
+        <div class="toggle" onclick="toggleMode()" id="toggle-text">Don't have an account? Create one</div>
     </div>
 
     <script>
-        function start() {
-            const phone = document.getElementById('phone').value.trim();
-            if(!phone) {
-                alert("Please enter your phone number to continue!");
-                return;
-            }
+        let isLogin = true;
 
-            // Save user identity to LocalStorage
-            localStorage.setItem('user_phone', phone);
-            
-            // Redirect to main page
-            window.location.href = 'main.html';
+        function toggleMode() {
+            isLogin = !isLogin;
+            document.getElementById('auth-title').innerText = isLogin ? 'Z-SPACE LOGIN' : 'CREATE ACCOUNT';
+            document.getElementById('name').style.display = isLogin ? 'none' : 'block';
+            document.getElementById('btn-text').innerText = isLogin ? 'SIGN IN' : 'REGISTER';
+            document.getElementById('toggle-text').innerText = isLogin ? "Don't have an account? Create one" : "Already have an account? Sign In";
         }
 
-        // Redirect if already logged in
-        window.onload = () => {
-            if(localStorage.getItem('user_phone')) {
-                window.location.href = 'main.html';
+        async function handleAuth() {
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('password').value;
+            const name = document.getElementById('name').value;
+
+            if(!phone || !password) return alert("Please fill all fields");
+            
+            const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+            const body = isLogin ? { phone, password } : { phone, password, name };
+
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                const data = await res.json();
+                if(data.success) {
+                    if(isLogin) {
+                        localStorage.setItem('token', data.token);
+                        localStorage.setItem('user_phone', data.user.phone);
+                        // 🔥 Redirect ကို Dashboard ဆီ ပြောင်းထားတယ်
+                        window.location.href = '/dashboard';
+                    } else {
+                        alert("Account Created! Now Login.");
+                        toggleMode();
+                    }
+                } else { 
+                    alert(data.error || "Something went wrong"); 
+                }
+            } catch (err) {
+                alert("Server Connection Error!");
             }
-        };
+        }
     </script>
 </body>
 </html>

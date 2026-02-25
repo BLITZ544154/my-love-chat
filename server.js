@@ -1,71 +1,87 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const path = require('path');
+const http = require('http');
+const { Server } = require('socket.io');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
 const app = express();
+const server = http.createServer(app);
 
-app.use(express.json({ limit: '50mb' })); // ပုံတင်ဖို့အတွက် limit တိုးထားတယ်
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+// Socket.io Setup
+const io = new Server(server, {
+    cors: { origin: "*" }
+});
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://stunchou493_db_user:SroWdYcunJAibvyH@cluster0.mjzoi0g.mongodb.net/?appName=Cluster0';
+app.use(express.json());
 
-mongoose.connect(MONGO_URI).then(() => console.log("✅ Z-SPACE ENGINE READY"));
+// 1. Database Connection
+// .env ထဲမှာ MONGO_URI မရှိရင် local ကို သုံးမယ်
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/my_app_db';
+mongoose.connect(MONGO_URI)
+    .then(() => console.log("✅ MongoDB ချိတ်ဆက်မှု အောင်မြင်သည်!"))
+    .catch(err => console.error("❌ DB Error:", err));
 
-// --- User Schema ---
+// 2. User Schema & Model (ဒေတာ သိမ်းမယ့် ပုံစံ)
 const userSchema = new mongoose.Schema({
-    phone: { type: String, unique: true },
-    name: String,
-    bio: String,
-    avatar: String, // Base64 ပုံသိမ်းမယ့်နေရာ
-    privacy: {
-        showNumber: { type: String, default: 'Everyone' } // Everyone သို့မဟုတ် Nobody
-    },
-    settings: {
-        notiSound: { type: String, default: 'ding.mp3' }
-    }
+    username: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true }
 });
 const User = mongoose.model('User', userSchema);
 
-// --- Message Schema ---
-const messageSchema = new mongoose.Schema({
-    sender: String,
-    receiver: String,
-    text: String,
-    timestamp: { type: Date, default: Date.now }
-});
-const Message = mongoose.model('Message', messageSchema);
-
-// --- APIs ---
-app.post('/api/user/update', async (req, res) => {
+// 3. Register Route (အကောင့်သစ်ဖွင့်ရန်)
+app.post('/api/register', async (req, res) => {
     try {
-        const { phone, name, bio, avatar, privacy, settings } = req.body;
-        await User.findOneAndUpdate({ phone }, { name, bio, avatar, privacy, settings }, { upsert: true });
-        res.json({ success: true });
-    } catch (e) { res.status(500).send(e.message); }
+        const { username, email, password } = req.body;
+        
+        // Password ကို Hash လုပ်မယ် (လုံခြုံရေးအတွက်)
+        const hashedPassword = await bcrypt.hash(password, 10);
+        
+        const newUser = new User({ username, email, password: hashedPassword });
+        await newUser.save();
+        
+        res.status(201).json({ message: "User Register အောင်မြင်ပါတယ် သာကြီး!" });
+    } catch (error) {
+        res.status(500).json({ error: "Register လုပ်လို့မရပါ (Email တူနေတာ ဖြစ်နိုင်တယ်)" });
+    }
 });
 
-app.get('/api/user/:phone', async (req, res) => {
-    const user = await User.findOne({ phone: req.params.phone });
-    res.json(user);
+// 4. Login Route (အကောင့်ဝင်ရန်)
+app.post('/api/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const user = await User.findOne({ email });
+        
+        if (!user) return res.status(404).json({ error: "User ရှာမတွေ့ပါ" });
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) return res.status(400).json({ error: "Password မှားနေတယ် သာကြီး" });
+
+        // JWT Token ထုတ်ပေးမယ်
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'secret123', { expiresIn: '1d' });
+        
+        res.json({ message: "Login အောင်မြင်တယ်!", token, user: { username: user.username, email: user.email } });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
-app.post('/api/send', async (req, res) => {
-    const msg = new Message(req.body);
-    await msg.save();
-    res.json({ success: true });
+// 5. Socket.io Real-time Connection
+io.on('connection', (socket) => {
+    console.log(`⚡ User တစ်ယောက် ချိတ်လာပြီ: ${socket.id}`);
+    
+    socket.on('send_message', (data) => {
+        io.emit('receive_message', data); // အားလုံးဆီ စာပြန်ပို့မယ်
+    });
+
+    socket.on('disconnect', () => {
+        console.log("🔥 User ထွက်သွားပြီ");
+    });
 });
 
-app.get('/api/messages/:u1/:u2', async (req, res) => {
-    const { u1, u2 } = req.params;
-    const msgs = await Message.find({ $or: [{ sender: u1, receiver: u2 }, { sender: u2, receiver: u1 }] }).sort('timestamp');
-    res.json(msgs);
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+    console.log(`🚀 Server က http://localhost:${PORT} မှာ အလုပ်လုပ်နေပြီ`);
 });
-
-// --- Routing (chat ဖယ်လိုက်ပြီ) ---
-const uiFiles = ['main', 'dashboard', 'inbox', 'messages', 'settings', 'edit-profile', 'security', 'about-device', 'appearance'];
-uiFiles.forEach(file => {
-    app.get(`/${file}`, (req, res) => res.sendFile(path.join(__dirname, 'public', `${file}.html`)));
-});
-app.get(/^(?!\/api).*$/, (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-
-app.listen(process.env.PORT || 10000);

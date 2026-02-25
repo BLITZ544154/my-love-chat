@@ -3,28 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Messages | Z-SPACE</title>
+    <title>Z-SPACE | Messages</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root { --primary: #00f2ff; --bg: #050508; }
+        :root { --primary: #00f2ff; --bg: #050508; --card: #0d1117; }
         body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; }
-        .header { padding: 20px; font-size: 20px; font-weight: bold; color: var(--primary); border-bottom: 1px solid #111; }
-        .list { padding: 10px; }
-        .fab { position: fixed; bottom: 20px; right: 20px; background: var(--primary); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: black; cursor: pointer; }
+        .nav-header { padding: 20px; background: #0a0a0a; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; position: sticky; top: 0; z-index: 100; }
+        .logo { font-size: 22px; font-weight: bold; color: var(--primary); text-shadow: 0 0 10px var(--primary); }
+        .chat-list { padding: 10px; }
+        .chat-item { display: flex; align-items: center; padding: 15px; background: var(--card); border-radius: 15px; margin-bottom: 10px; cursor: pointer; border: 1px solid transparent; transition: 0.3s; text-decoration: none; color: white; }
+        .chat-item:hover { border-color: var(--primary); background: #161b22; }
+        .avatar { width: 55px; height: 55px; border-radius: 50%; border: 2px solid #222; margin-right: 15px; object-fit: cover; }
+        .chat-info { flex: 1; }
+        .chat-info h4 { margin: 0 0 5px; font-size: 16px; }
+        .chat-info p { margin: 0; font-size: 13px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+        .fab { position: fixed; bottom: 30px; right: 25px; background: var(--primary); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: black; font-size: 24px; box-shadow: 0 0 20px rgba(0,242,255,0.4); cursor: pointer; border: none; }
     </style>
 </head>
 <body>
-    <div class="header">Z-SPACE MESSAGES</div>
-    <div class="list" id="chat-list">
-        <p style="text-align: center; color: #333; margin-top: 50px;">Click the + button to start a private chat</p>
+
+    <div class="nav-header">
+        <div class="logo">Z-SPACE</div>
+        <div style="display: flex; gap: 20px;">
+            <i class="fas fa-search" onclick="searchUser()"></i>
+            <a href="settings" style="color:white;"><i class="fas fa-cog"></i></a>
+        </div>
     </div>
-    <div class="fab" onclick="newChat()"><i class="fas fa-plus"></i></div>
+
+    <div class="chat-list" id="chat-list">
+        <p style="text-align: center; color: #444; margin-top: 100px;">Loading conversations...</p>
+    </div>
+
+    <button class="fab" onclick="newChat()">
+        <i class="fas fa-comment-medical"></i>
+    </button>
 
     <script>
-        function newChat() {
-            const p = prompt("Enter phone number to chat:");
-            if(p) window.location.href = `inbox.html?user=${p}`;
+        const myPhone = localStorage.getItem('user_phone');
+
+        async function loadChats() {
+            try {
+                // Backend မှာ မင်းပို့ထားတဲ့ message တွေထဲကနေ Conversation List ကို ယူမယ်
+                // လောလောဆယ် API endpoint မရှိသေးရင်တောင် logic ကို ကြိုရေးထားပေးမယ်
+                const listContainer = document.getElementById('chat-list');
+                
+                // ဥပမာ- ကိုယ်နဲ့ စာပို့ထားဖူးတဲ့ ဖုန်းနံပါတ်တွေကို Message database ကနေ ရှာမယ်
+                // ဒါက backend မှာ list ထုတ်ပေးတဲ့ API တစ်ခု ထပ်လိုလိမ့်မယ်
+                // အခုကတော့ ဥပမာ list အနေနဲ့ ပြထားပေးမယ်
+                
+                const chats = []; // API ကနေလာမယ့် data
+                
+                if (chats.length === 0) {
+                    listContainer.innerHTML = '<p style="text-align: center; color: #444; margin-top: 100px;">No messages yet. Start a new chat!</p>';
+                    return;
+                }
+
+                listContainer.innerHTML = chats.map(chat => `
+                    <a href="inbox.html?user=${chat.phone}" class="chat-item">
+                        <img src="${chat.avatar || 'https://via.placeholder.com/55'}" class="avatar">
+                        <div class="chat-info">
+                            <h4>${chat.name}</h4>
+                            <p>${chat.lastMsg}</p>
+                        </div>
+                    </a>
+                `).join('');
+
+            } catch (err) {
+                console.error("Error loading chats:", err);
+            }
         }
+
+        function newChat() {
+            const p = prompt("Enter User Phone Number:");
+            if(p && p !== myPhone) {
+                // နံပါတ်ရိုက်လိုက်တာနဲ့ အဲဒီလူနဲ့ chat ဖို့ inbox ကိုသွားမယ်
+                window.location.href = `inbox.html?user=${p}`;
+            }
+        }
+
+        function searchUser() {
+            alert("Search by name feature coming soon!");
+        }
+
+        window.onload = loadChats;
     </script>
 </body>
 </html>

@@ -6,85 +6,75 @@
     <title>Edit Profile | Z-SPACE</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root { --primary: #00f2ff; --bg: #050508; --card-bg: #0a1214; }
-        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; display: flex; justify-content: center; padding-top: 50px; }
-        
-        .container { background: var(--card-bg); width: 320px; padding: 25px; border-radius: 20px; border: 1px solid #111; }
-        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
-        .header a { color: white; text-decoration: none; font-size: 18px; }
-
-        .input-group { margin-bottom: 20px; text-align: left; }
-        .input-group label { display: block; font-size: 12px; color: #555; margin-bottom: 8px; font-weight: bold; }
-        .input-group input, .input-group textarea {
-            width: 100%; background: #151f21; border: 1px solid #222; padding: 12px; 
-            border-radius: 10px; color: white; outline: none; box-sizing: border-box;
-        }
-        .input-group input:focus { border-color: var(--primary); }
-
-        .save-btn {
-            width: 100%; background: var(--primary); color: black; border: none; 
-            padding: 15px; border-radius: 15px; font-weight: bold; cursor: pointer; margin-top: 10px;
-        }
-        .preview-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; border: 2px solid var(--primary); }
+        :root { --primary: #00f2ff; --bg: #050508; --card: #0d1117; }
+        body { background: var(--bg); color: white; font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
+        .container { width: 100%; max-width: 400px; background: var(--card); padding: 30px; border-radius: 25px; border: 1px solid #222; }
+        .avatar-sec { text-align: center; margin-bottom: 25px; position: relative; }
+        .avatar-sec img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); }
+        .cam-btn { position: absolute; bottom: 5px; right: 35%; background: var(--primary); color: black; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; font-size: 10px; color: #555; margin-bottom: 8px; letter-spacing: 1px; }
+        input, textarea { width: 100%; background: #161b22; border: 1px solid #30363d; padding: 12px; border-radius: 12px; color: white; outline: none; box-sizing: border-box; }
+        .save-btn { width: 100%; background: var(--primary); color: black; border: none; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <div class="header">
-            <a href="dashboard.html"><i class="fas fa-arrow-left"></i></a>
-            <h3 style="margin:0;">Edit Profile</h3>
+        <div class="avatar-sec">
+            <img id="preview" src="https://via.placeholder.com/150">
+            <label for="file-in" class="cam-btn"><i class="fas fa-camera"></i></label>
+            <input type="file" id="file-in" hidden accept="image/*" onchange="previewFile()">
         </div>
-
-        <div style="text-align: center;">
-            <img id="img-preview" src="https://i.ibb.co/vzPRm9r/blitz-profile.jpg" class="preview-img">
-        </div>
-
         <div class="input-group">
             <label>DISPLAY NAME</label>
-            <input type="text" id="edit-name" placeholder="Enter name...">
+            <input type="text" id="name" placeholder="Username">
         </div>
-
         <div class="input-group">
             <label>BIO</label>
-            <textarea id="edit-bio" rows="3" placeholder="Write something about you..."></textarea>
+            <textarea id="bio" rows="2" placeholder="Tell us about yourself..."></textarea>
         </div>
-
-        <div class="input-group">
-            <label>PROFILE IMAGE URL</label>
-            <input type="text" id="edit-img" placeholder="Paste image link..." oninput="updatePreview()">
-        </div>
-
-        <button class="save-btn" onclick="saveProfile()">SAVE CHANGES</button>
+        <button class="save-btn" onclick="save()">UPDATE Z-SPACE IDENTITY</button>
     </div>
 
     <script>
-        // Load existing data
-        window.onload = () => {
-            document.getElementById('edit-name').value = localStorage.getItem('user_name') || 'BLITZ';
-            document.getElementById('edit-bio').value = localStorage.getItem('user_bio') || "i'm B L I T Z";
-            const currentImg = localStorage.getItem('user_img') || 'https://i.ibb.co/vzPRm9r/blitz-profile.jpg';
-            document.getElementById('edit-img').value = currentImg;
-            document.getElementById('img-preview').src = currentImg;
+        const phone = localStorage.getItem('user_phone');
+        let base64Img = "";
+
+        window.onload = async () => {
+            const res = await fetch(`/api/user/${phone}`);
+            const user = await res.json();
+            if(user) {
+                document.getElementById('name').value = user.name || "";
+                document.getElementById('bio').value = user.bio || "";
+                document.getElementById('preview').src = user.avatar || "https://via.placeholder.com/150";
+                base64Img = user.avatar;
+            }
         };
 
-        function updatePreview() {
-            const url = document.getElementById('edit-img').value;
-            if(url) document.getElementById('img-preview').src = url;
+        function previewFile() {
+            const file = document.querySelector('#file-in').files[0];
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                base64Img = reader.result;
+                document.getElementById('preview').src = base64Img;
+            };
+            if (file) reader.readAsDataURL(file);
         }
 
-        function saveProfile() {
-            const name = document.getElementById('edit-name').value;
-            const bio = document.getElementById('edit-bio').value;
-            const img = document.getElementById('edit-img').value;
-
-            // Save to localStorage
-            localStorage.setItem('user_name', name);
-            localStorage.setItem('user_bio', bio);
-            localStorage.setItem('user_img', img);
-
-            alert("Profile Updated Successfully! ✅");
-            window.location.href = 'dashboard.html'; // ပြင်ပြီးရင် Dashboard ပြန်သွားမယ်
+        async function save() {
+            const data = {
+                phone,
+                name: document.getElementById('name').value,
+                bio: document.getElementById('bio').value,
+                avatar: base64Img
+            };
+            await fetch('/api/user/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            alert("Profile Updated! ✅");
+            window.location.href = "dashboard.html";
         }
     </script>
 </body>

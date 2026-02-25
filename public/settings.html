@@ -6,113 +6,54 @@
     <title>Settings | Z-SPACE</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root { --primary: #00f2ff; --bg: #050508; --card-bg: #0a1214; }
-        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; display: flex; justify-content: center; padding-top: 20px; }
-        
-        .container { width: 340px; padding: 15px; }
-        
-        /* Profile Summary Section */
-        .profile-snap { 
-            background: linear-gradient(145deg, #0a1214, #050508); 
-            padding: 20px; border-radius: 20px; display: flex; align-items: center; 
-            gap: 15px; margin-bottom: 25px; border: 1px solid #111;
-        }
-        .profile-snap img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
-        .profile-snap h3 { margin: 0; font-size: 18px; color: var(--primary); }
-        .profile-snap p { margin: 3px 0 0; font-size: 12px; color: #555; }
-
-        /* Settings List Groups */
-        .setting-group { background: var(--card-bg); border-radius: 20px; overflow: hidden; margin-bottom: 20px; border: 1px solid #111; }
-        .setting-item { 
-            display: flex; align-items: center; justify-content: space-between; 
-            padding: 15px 20px; cursor: pointer; transition: 0.2s; text-decoration: none; color: white;
-            border-bottom: 1px solid #050508;
-        }
-        .setting-item:last-child { border-bottom: none; }
-        .setting-item:active { background: #111; }
-
-        .item-left { display: flex; align-items: center; gap: 15px; }
-        .item-left i { font-size: 18px; width: 25px; text-align: center; color: #555; }
-        .item-left span { font-size: 14px; font-weight: 500; }
-        
-        .chevron { font-size: 12px; color: #333; }
-        .val { font-size: 12px; color: var(--primary); margin-right: 10px; }
+        :root { --primary: #00f2ff; --bg: #050508; --card: #0d1117; }
+        body { background: var(--bg); color: white; font-family: sans-serif; display: flex; justify-content: center; padding-top: 20px; }
+        .container { width: 350px; }
+        .group { background: var(--card); border-radius: 20px; border: 1px solid #222; margin-bottom: 20px; overflow: hidden; }
+        .item { padding: 18px; border-bottom: 1px solid #1a1a1a; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .item:last-child { border-bottom: none; }
+        select { background: none; border: none; color: var(--primary); outline: none; font-weight: bold; }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <div class="profile-snap">
-            <img id="set-img" src="https://i.ibb.co/vzPRm9r/blitz-profile.jpg" alt="User">
-            <div>
-                <h3 id="set-name">BLITZ</h3>
-                <p id="set-phone">+95 9xxxxxxxxx</p>
-            </div>
+        <h2 style="color: var(--primary); margin-bottom: 25px;">Z-SPACE ENGINE</h2>
+        <div class="group">
+            <div class="item" onclick="location.href='edit-profile.html'"><span><i class="fas fa-user-edit"></i> Edit Profile</span> <i class="fas fa-chevron-right"></i></div>
+            <div class="item" onclick="location.href='security.html'"><span><i class="fas fa-shield-alt"></i> Privacy</span> <i class="fas fa-chevron-right"></i></div>
         </div>
-
-        <div class="setting-group">
-            <a href="edit-profile.html" class="setting-item">
-                <div class="item-left">
-                    <i class="fas fa-user-edit"></i>
-                    <span>Edit Profile</span>
-                </div>
-                <i class="fas fa-chevron-right chevron"></i>
-            </a>
-            <a href="security.html" class="setting-item">
-                <div class="item-left">
-                    <i class="fas fa-lock"></i>
-                    <span>Privacy and Security</span>
-                </div>
-                <i class="fas fa-chevron-right chevron"></i>
-            </a>
-        </div>
-
-        <div class="setting-group">
-            <div class="setting-item">
-                <div class="item-left">
-                    <i class="fas fa-bell"></i>
-                    <span>Notifications</span>
-                </div>
-                <span class="val">On</span>
+        <div class="group">
+            <div class="item">
+                <span><i class="fas fa-volume-up"></i> Alert Sound</span>
+                <select id="sound-in" onchange="save()">
+                    <option value="ding.mp3">Ding</option>
+                    <option value="neon.mp3">Neon</option>
+                    <option value="silent">Silent</option>
+                </select>
             </div>
-            <div class="setting-item">
-                <div class="item-left">
-                    <i class="fas fa-palette"></i>
-                    <span>Chat Settings</span>
-                </div>
-                <i class="fas fa-chevron-right chevron"></i>
-            </a>
-            <div class="setting-item">
-                <div class="item-left">
-                    <i class="fas fa-database"></i>
-                    <span>Data and Storage</span>
-                </div>
-                <i class="fas fa-chevron-right chevron"></i>
-            </div>
-        </div>
-
-        <div class="setting-group">
-            <div class="setting-item" onclick="alert('Z-SPACE Engine v1.0.0 Stable')">
-                <div class="item-left">
-                    <i class="fas fa-info-circle"></i>
-                    <span>Z-SPACE Version</span>
-                </div>
-                <span class="val">1.0.0</span>
+            <div class="item" onclick="clearData()">
+                <span style="color: #ff4b2b;"><i class="fas fa-trash"></i> Clear Storage</span>
             </div>
         </div>
     </div>
 
     <script>
-        window.onload = () => {
-            // LocalStorage ကနေ Data တွေကို ယူပြီး Settings မှာ ပြပေးမယ်
-            const name = localStorage.getItem('user_name') || 'BLITZ';
-            const phone = localStorage.getItem('user_phone') || 'No Phone';
-            const img = localStorage.getItem('user_img') || 'https://i.ibb.co/vzPRm9r/blitz-profile.jpg';
-
-            document.getElementById('set-name').innerText = name;
-            document.getElementById('set-phone').innerText = phone;
-            document.getElementById('set-img').src = img;
-        };
+        const phone = localStorage.getItem('user_phone');
+        async function save() {
+            const s = document.getElementById('sound-in').value;
+            await fetch('/api/user/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone, settings: { notiSound: s } })
+            });
+            alert("Sound Preference Saved! 🔊");
+        }
+        function clearData() {
+            if(confirm("Log out and clear all data?")) {
+                localStorage.clear();
+                window.parent.location.href = 'index.html';
+            }
+        }
     </script>
 </body>
 </html>

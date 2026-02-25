@@ -6,96 +6,25 @@
     <title>Messages | Z-SPACE</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root { --primary: #00f2ff; --bg: #050508; --item-bg: #0a0a0a; }
-        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; }
-        
-        /* Header Section */
-        .header { padding: 20px; background: #0a0a0a; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #111; position: sticky; top: 0; z-index: 10; }
-        .header h2 { margin: 0; font-size: 22px; color: var(--primary); }
-        .search-bar { background: #151f21; padding: 10px 15px; border-radius: 12px; display: flex; align-items: center; margin: 15px; gap: 10px; border: 1px solid #222; }
-        .search-bar input { background: none; border: none; color: white; outline: none; width: 100%; font-size: 14px; }
-
-        /* Chat List Item */
-        .chat-list { padding: 0 10px; }
-        .chat-item { display: flex; align-items: center; padding: 15px; background: var(--item-bg); margin-bottom: 8px; border-radius: 15px; cursor: pointer; text-decoration: none; color: white; transition: 0.2s; }
-        .chat-item:hover { background: #111; }
-        
-        .chat-item img { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 2px solid #222; }
-        .chat-info { flex: 1; margin-left: 15px; }
-        .chat-info h4 { margin: 0 0 5px; font-size: 16px; }
-        .chat-info p { margin: 0; font-size: 13px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
-        
-        .chat-meta { text-align: right; }
-        .chat-meta span { font-size: 11px; color: #444; }
-        .unread { background: var(--primary); color: black; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: bold; margin-top: 5px; display: inline-block; }
-
-        /* Float Button */
-        .fab { position: fixed; bottom: 20px; right: 20px; width: 55px; height: 55px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: black; font-size: 20px; box-shadow: 0 5px 15px rgba(0, 242, 255, 0.3); cursor: pointer; }
+        :root { --primary: #00f2ff; --bg: #050508; }
+        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; }
+        .header { padding: 20px; font-size: 20px; font-weight: bold; color: var(--primary); border-bottom: 1px solid #111; }
+        .list { padding: 10px; }
+        .fab { position: fixed; bottom: 20px; right: 20px; background: var(--primary); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: black; cursor: pointer; }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <h2>Z-SPACE</h2>
-        <i class="fas fa-search" style="color: #555;"></i>
+    <div class="header">Z-SPACE MESSAGES</div>
+    <div class="list" id="chat-list">
+        <p style="text-align: center; color: #333; margin-top: 50px;">Click the + button to start a private chat</p>
     </div>
-
-    <div class="search-bar">
-        <i class="fas fa-search"></i>
-        <input type="text" placeholder="Search chats..." id="searchBox">
-    </div>
-
-    <div class="chat-list" id="list">
-        <a href="chat.html?user=Global" class="chat-item">
-            <img src="https://i.ibb.co/vzPRm9r/blitz-profile.jpg" alt="Global">
-            <div class="chat-info">
-                <h4 style="color: var(--primary);">Global Chat 🌏</h4>
-                <p id="global-last-msg">Loading latest messages...</p>
-            </div>
-            <div class="chat-meta">
-                <span>12:45 PM</span><br>
-                <div class="unread">99+</div>
-            </div>
-        </a>
-
-        <a href="inbox.html?user=DevTeam" class="chat-item">
-            <img src="https://ui-avatars.com/api/?name=Dev+Team&background=0D8ABC&color=fff" alt="Dev">
-            <div class="chat-info">
-                <h4>Dev Team 🛠️</h4>
-                <p>Welcome to Z-Space Engine!</p>
-            </div>
-            <div class="chat-meta">
-                <span>Yesterday</span>
-            </div>
-        </a>
-    </div>
-
-    <div class="fab" onclick="newChat()">
-        <i class="fas fa-pen"></i>
-    </div>
+    <div class="fab" onclick="newChat()"><i class="fas fa-plus"></i></div>
 
     <script>
-        // စာပို့မယ့်သူအသစ်ကို ဖုန်းနံပါတ်နဲ့ ရှာဖွေခြင်း
         function newChat() {
-            const phone = prompt("Enter Phone Number to Chat:");
-            if(phone) {
-                window.location.href = `inbox.html?user=${phone}`;
-            }
+            const p = prompt("Enter phone number to chat:");
+            if(p) window.location.href = `inbox.html?user=${p}`;
         }
-
-        // Global Chat ထဲက နောက်ဆုံးစာကို ပြဖို့ ကြိုးစားကြည့်မယ်
-        async function updateLastMsg() {
-            try {
-                const res = await fetch('/api/messages/Guest/Global');
-                const data = await res.json();
-                if(data.length > 0) {
-                    document.getElementById('global-last-msg').innerText = data[data.length - 1].text;
-                }
-            } catch(e) { console.log("Updating list..."); }
-        }
-
-        setInterval(updateLastMsg, 5000);
-        updateLastMsg();
     </script>
 </body>
 </html>

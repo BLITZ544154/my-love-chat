@@ -431,7 +431,7 @@ app.get('/call', (req, res) => {
 });
 
 // Catch-all for unknown routes (SPA-style fallback to index) - Express 5 syntax
-app.get('(.*)', (req, res) => {
+app.get('/:any*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 

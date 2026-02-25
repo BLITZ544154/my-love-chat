@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Z-SPACE | Edit Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root { --c1:#00f2ff; --bg:#050508; }
+        body { margin:0; background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; padding:20px; }
+        .edit-card { background:#111; padding:25px; border-radius:30px; border:1px solid #222; }
+        .avatar-edit { text-align:center; margin-bottom:25px; position:relative; }
+        .avatar-edit img { width:100px; height:100px; border-radius:50%; border:2px solid var(--c1); object-fit:cover; }
+        .upload-icon { position:absolute; bottom:0; right:calc(50% - 50px); background:var(--c1); color:#000; padding:8px; border-radius:50%; font-size:12px; cursor:pointer; }
+        
+        .input-box { margin-bottom:20px; }
+        label { display:block; font-size:11px; color:var(--c1); letter-spacing:2px; margin-bottom:8px; }
+        input, textarea, select { width:100%; background:#1a1a1a; border:1px solid #333; padding:15px; border-radius:15px; color:#fff; font-family:inherit; outline:none; box-sizing:border-box; }
+        .save-btn { width:100%; padding:18px; background:var(--c1); border:none; border-radius:20px; font-weight:900; color:#000; cursor:pointer; margin-top:10px; }
+    </style>
+</head>
+<body>
+    <div style="display:flex; align-items:center; gap:15px; margin-bottom:30px;">
+        <i class="fas fa-arrow-left" onclick="window.location.href='settings.html'" style="cursor:pointer"></i>
+        <h2 style="margin:0">Edit Profile</h2>
+    </div>
+
+    <div class="edit-card">
+        <div class="avatar-edit">
+            <img src="B L I T Z.jpg" id="avatar-preview">
+            <label for="file-upload" class="upload-icon"><i class="fas fa-camera"></i></label>
+            <input type="file" id="file-upload" style="display:none" onchange="previewImage(event)">
+        </div>
+
+        <div class="input-box"><label>DISPLAY NAME</label><input type="text" id="in-name"></div>
+        <div class="input-box"><label>USERNAME (@)</label><input type="text" id="in-user" placeholder="username"></div>
+        <div class="input-box"><label>BIO</label><textarea id="in-bio" rows="2"></textarea></div>
+        
+        <div class="input-box">
+            <label>WHO CAN SEE MY PHONE?</label>
+            <select id="in-phone">
+                <option value="everyone">Everyone</option>
+                <option value="friends">Friends Only</option>
+                <option value="me">Only Me</option>
+            </select>
+        </div>
+
+        <button class="save-btn" onclick="saveAll()">UPDATE PROFILE</button>
+    </div>
+
+    <script>
+        // Load data
+        document.getElementById('in-name').value = localStorage.getItem('glow_user') || "";
+        document.getElementById('in-user').value = localStorage.getItem('user_handle') || "";
+        document.getElementById('in-bio').value = localStorage.getItem('user_bio') || "";
+        document.getElementById('in-phone').value = localStorage.getItem('phone_privacy') || "everyone";
+        if(localStorage.getItem('user_avatar')) document.getElementById('avatar-preview').src = localStorage.getItem('user_avatar');
+
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                const output = document.getElementById('avatar-preview');
+                output.src = reader.result;
+                localStorage.setItem('user_avatar', reader.result); // Base64 saving
+            }
+            reader.readAsDataURL(event.target.files[0]);
+        }
+
+        function saveAll() {
+            localStorage.setItem('glow_user', document.getElementById('in-name').value);
+            localStorage.setItem('user_handle', document.getElementById('in-user').value);
+            localStorage.setItem('user_bio', document.getElementById('in-bio').value);
+            localStorage.setItem('phone_privacy', document.getElementById('in-phone').value);
+            alert("Profile Synced Successfully! 🚀");
+            window.location.href = "dashboard.html";
+        }
+    </script>
+</body>
+</html>

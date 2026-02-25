@@ -26,7 +26,7 @@ const messageSchema = new mongoose.Schema({
 });
 const Message = mongoose.model('Message', messageSchema);
 
-// APIs
+// --- APIs ---
 app.post('/api/send', async (req, res) => {
     try {
         const msg = new Message(req.body);
@@ -47,28 +47,14 @@ app.get('/api/messages/:u1/:u2', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/message/:id', async (req, res) => {
-    try {
-        await Message.findByIdAndDelete(req.params.id);
-        res.json({ success: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.put('/api/message/:id', async (req, res) => {
-    try {
-        await Message.findByIdAndUpdate(req.params.id, { text: req.body.text, isEdited: true });
-        res.json({ success: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// Specific Routes
+// --- UI Routes ---
 app.get('/main', (req, res) => res.sendFile(path.join(__dirname, 'public', 'main.html')));
 app.get('/inbox', (req, res) => res.sendFile(path.join(__dirname, 'public', 'inbox.html')));
 app.get('/messages', (req, res) => res.sendFile(path.join(__dirname, 'public', 'messages.html')));
 app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'public', 'dashboard.html')));
 
-// Wildcard Route Fix for Express v5
-app.get('/:path*', (req, res) => {
+// --- The Ultimate Wildcard Fix for Express 5 ---
+app.get(/^(?!\/api).*$/, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 

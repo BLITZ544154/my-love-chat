@@ -70,7 +70,16 @@ const sendLimiter = rateLimit({
     legacyHeaders: false
 });
 
-// 1. Database Connection
+// 1. Database Connection + old index cleanup
+mongoose.connection.on('connected', async () => {
+    try {
+        await mongoose.connection.db.collection('users').dropIndex('email_1');
+        console.log('✅ Old email index dropped');
+    } catch (e) {
+        console.log('Index already gone or error dropping index');
+    }
+});
+
 mongoose.connect(MONGO_URI)
     .then(() => console.log("✅ MongoDB ချိတ်ဆက်မှု အောင်မြင်သည်!"))
     .catch(err => console.error("❌ DB Error:", err));

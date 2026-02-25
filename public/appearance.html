@@ -2,64 +2,102 @@
 <html lang="my">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Appearance | Theme Shop</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;900&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appearance | Z-SPACE</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root { --c1:#00f2ff; --bg:#050508; }
-        body { margin:0; background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; padding:20px; }
-        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .theme-card { background: #111; border: 1px solid #222; padding: 20px; border-radius: 25px; text-align: center; cursor: pointer; transition: 0.3s; }
-        .theme-card:active { transform: scale(0.95); }
-        .color-preview { width: 50px; height: 50px; border-radius: 50%; margin: 0 auto 10px; border: 3px solid #fff; }
-        .price-tag { font-size: 12px; font-weight: 900; color: var(--c1); margin-top: 10px; }
-        .locked { filter: grayscale(1); opacity: 0.6; }
+        :root { --primary: #00f2ff; --bg: #050508; --card-bg: #0a1214; }
+        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; display: flex; justify-content: center; padding-top: 30px; }
+        
+        .container { width: 340px; padding: 15px; }
+        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
+        .header a { color: white; text-decoration: none; font-size: 18px; }
+
+        /* Theme Preview */
+        .preview-box { 
+            background: #111; height: 120px; border-radius: 20px; margin-bottom: 25px; 
+            display: flex; flex-direction: column; padding: 15px; gap: 8px; border: 1px solid #222;
+        }
+        .msg-pre { padding: 8px 12px; border-radius: 12px; font-size: 11px; max-width: 70%; }
+        .msg-pre.other { background: #222; align-self: flex-start; }
+        .msg-pre.me { background: var(--primary); color: black; align-self: flex-end; }
+
+        h4 { font-size: 14px; color: #555; margin-bottom: 12px; text-transform: uppercase; }
+
+        /* Color Selection */
+        .color-grid { display: flex; gap: 15px; margin-bottom: 30px; }
+        .color-dot { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: 0.2s; }
+        .color-dot.active { border-color: white; transform: scale(1.1); }
+
+        .item { 
+            background: var(--card-bg); padding: 15px; border-radius: 15px; 
+            display: flex; align-items: center; justify-content: space-between; 
+            margin-bottom: 10px; border: 1px solid #111;
+        }
+        .item span { font-size: 14px; }
     </style>
 </head>
 <body>
-    <div style="display:flex; align-items:center; gap:15px; margin-bottom:30px;">
-        <i class="fas fa-arrow-left" onclick="window.location.href='settings'" style="cursor:pointer"></i>
-        <h2 style="margin:0">Appearance</h2>
-    </div>
 
-    <div style="background:rgba(0,242,255,0.05); padding:15px; border-radius:15px; border:1px solid rgba(0,242,255,0.1); margin-bottom:20px;">
-        <i class="fas fa-coins" style="color:#ffd700"></i> My Points: <span id="my-points">999,999</span>
-    </div>
-
-    <div class="shop-grid">
-        <div class="theme-card" onclick="setTheme('cyan', 0)">
-            <div class="color-preview" style="background:#00f2ff"></div>
-            <div style="font-weight:bold">Neon Cyan</div>
-            <div class="price-tag">FREE</div>
+    <div class="container">
+        <div class="header">
+            <a href="settings.html"><i class="fas fa-arrow-left"></i></a>
+            <h3 style="margin:0;">Appearance</h3>
         </div>
 
-        <div class="theme-card" onclick="buyTheme('pink', 500)">
-            <div class="color-preview" style="background:#ff0055"></div>
-            <div style="font-weight:bold">Lava Pink</div>
-            <div class="price-tag">500 PTS</div>
+        <h4>Preview</h4>
+        <div class="preview-box" id="theme-preview">
+            <div class="msg-pre other">Hey! How does the new theme look?</div>
+            <div class="msg-pre me" id="me-preview">It looks amazing, Z-SPACE! 🔥</div>
         </div>
 
-        <div class="theme-card" onclick="buyTheme('gold', 1000)">
-            <div class="color-preview" style="background:#ffd700"></div>
-            <div style="font-weight:bold">Royal Gold</div>
-            <div class="price-tag">1,000 PTS</div>
+        <h4>Accent Color</h4>
+        <div class="color-grid">
+            <div class="color-dot active" style="background: #00f2ff;" onclick="setTheme('#00f2ff', this)"></div>
+            <div class="color-dot" style="background: #ff4b2b;" onclick="setTheme('#ff4b2b', this)"></div>
+            <div class="color-dot" style="background: #a8ff78;" onclick="setTheme('#a8ff78', this)"></div>
+            <div class="color-dot" style="background: #f093fb;" onclick="setTheme('#f093fb', this)"></div>
+            <div class="color-dot" style="background: #ffd700;" onclick="setTheme('#ffd700', this)"></div>
         </div>
+
+        <h4>Background</h4>
+        <div class="item">
+            <span>Chat Background</span>
+            <i class="fas fa-image" style="color: #555;"></i>
+        </div>
+        <div class="item">
+            <span>Night Mode</span>
+            <i class="fas fa-moon" style="color: var(--primary);"></i>
+        </div>
+
     </div>
 
     <script>
-        function setTheme(color, price) {
-            localStorage.setItem('app_theme', color);
-            alert("Theme Applied! 🚀");
-            window.location.href = 'dashboard';
+        function setTheme(color, el) {
+            // Update Active UI
+            document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+            el.classList.add('active');
+
+            // Update Preview
+            document.getElementById('me-preview').style.background = color;
+            
+            // Save to LocalStorage
+            localStorage.setItem('theme_color', color);
+
+            // ဒီကနေ တစ်ကိုယ်လုံးက CSS Variable ကို လှမ်းပြင်ဖို့ စဉ်းစားလို့ရတယ်
+            alert("Theme color updated to " + color);
         }
 
-        function buyTheme(color, price) {
-            // Point စစ်တဲ့ Logic နောက်မှထပ်ထည့်မယ်၊ အခုတော့ ဝယ်လို့ရအောင်လုပ်ထားမယ်
-            if(confirm(`Buy this theme for ${price} points?`)) {
-                setTheme(color, price);
+        window.onload = () => {
+            const savedColor = localStorage.getItem('theme_color');
+            if(savedColor) {
+                document.getElementById('me-preview').style.background = savedColor;
+                // Find and activate the dot with this color
+                document.querySelectorAll('.color-dot').forEach(d => {
+                    if(d.style.backgroundColor === savedColor) d.classList.add('active');
+                });
             }
-        }
+        };
     </script>
 </body>
 </html>

@@ -1,46 +1,68 @@
 <!DOCTYPE html>
 <html lang="my">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Z-SPACE | Access</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;900&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Z-SPACE</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root { --c1:#00f2ff; --bg:#050508; }
-        body { margin:0; background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; display:flex; justify-content:center; align-items:center; height:100vh; }
-        .auth-card { background:#111; width:320px; padding:40px 20px; border-radius:35px; text-align:center; border:1px solid #222; }
-        input { width:100%; background:#1a1a1a; border:1px solid #333; padding:15px; border-radius:15px; color:#fff; outline:none; box-sizing:border-box; margin-bottom:12px; }
-        .btn { width:100%; padding:15px; background:var(--c1); border:none; border-radius:15px; font-weight:900; cursor:pointer; }
-        .toggle-link { font-size:12px; color:#555; margin-top:20px; cursor:pointer; }
+        :root { --primary: #00f2ff; --bg: #050508; }
+        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        
+        .login-box { width: 320px; text-align: center; padding: 40px 20px; }
+        .logo { font-size: 80px; color: var(--primary); margin-bottom: 20px; text-shadow: 0 0 20px rgba(0, 242, 255, 0.3); }
+        
+        h2 { margin-bottom: 10px; font-size: 24px; }
+        p { color: #555; font-size: 14px; margin-bottom: 30px; }
+
+        .input-group { background: #111; border-radius: 15px; padding: 15px; display: flex; align-items: center; gap: 10px; border: 1px solid #222; margin-bottom: 20px; }
+        .input-group i { color: #444; }
+        .input-group input { background: none; border: none; color: white; outline: none; width: 100%; font-size: 16px; }
+
+        .start-btn { 
+            width: 100%; background: var(--primary); color: black; border: none; 
+            padding: 18px; border-radius: 15px; font-weight: bold; font-size: 16px; 
+            cursor: pointer; transition: 0.3s; box-shadow: 0 5px 15px rgba(0, 242, 255, 0.2);
+        }
+        .start-btn:hover { transform: translateY(-3px); background: #00d2ff; }
     </style>
 </head>
 <body>
-    <div class="auth-card">
-        <h1 style="color:var(--c1); letter-spacing:3px;">Z-SPACE</h1>
-        <p id="auth-title" style="font-size:10px; color:#444; margin-bottom:30px;">PHONE NUMBER AUTHENTICATION</p>
-        <input type="tel" id="phone" placeholder="Phone (e.g. 09...)">
-        <input type="password" id="pass" placeholder="Password">
-        <button class="btn" onclick="handleAuth()" id="btn-text">LOGIN</button>
-        <div class="toggle-link" onclick="toggleMode()" id="toggle-text">New here? Register with Phone</div>
+
+    <div class="login-box">
+        <div class="logo"><i class="fab fa-telegram-plane"></i></div>
+        <h2>Z-SPACE</h2>
+        <p>The safest and fastest chat engine.</p>
+
+        <div class="input-group">
+            <i class="fas fa-phone-alt"></i>
+            <input type="text" id="phone" placeholder="Your Phone Number" onkeypress="if(event.key==='Enter') start()">
+        </div>
+
+        <button class="start-btn" onclick="start()">START MESSAGING</button>
     </div>
+
     <script>
-        let isLogin = true;
-        if(localStorage.getItem('isLoggedIn')) window.location.href = 'dashboard';
-        function toggleMode() {
-            isLogin = !isLogin;
-            document.getElementById('btn-text').innerText = isLogin ? 'LOGIN' : 'REGISTER';
-            document.getElementById('toggle-text').innerText = isLogin ? "New here? Register with Phone" : "Back to Login";
-        }
-        function handleAuth() {
-            const ph = document.getElementById('phone').value;
-            const p = document.getElementById('pass').value;
-            if(isLogin) {
-                if(localStorage.getItem('up_'+ph) === p) {
-                    localStorage.setItem('isLoggedIn', 'true'); localStorage.setItem('user_phone', ph); window.location.href = 'dashboard';
-                } else { alert("Error!"); }
-            } else {
-                localStorage.setItem('up_'+ph, p); alert("Registered!"); toggleMode();
+        function start() {
+            const phone = document.getElementById('phone').value.trim();
+            if(!phone) {
+                alert("Please enter your phone number to continue!");
+                return;
             }
+
+            // Save user identity to LocalStorage
+            localStorage.setItem('user_phone', phone);
+            
+            // Redirect to main page
+            window.location.href = 'main.html';
         }
+
+        // Redirect if already logged in
+        window.onload = () => {
+            if(localStorage.getItem('user_phone')) {
+                window.location.href = 'main.html';
+            }
+        };
     </script>
 </body>
 </html>

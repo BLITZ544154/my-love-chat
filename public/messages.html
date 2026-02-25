@@ -2,103 +2,100 @@
 <html lang="my">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Messages | Z-SPACE</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root { --c1:#00f2ff; --c2:#ff0055; --bg:#050508; }
-        body { margin:0; background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; padding:20px; }
+        :root { --primary: #00f2ff; --bg: #050508; --item-bg: #0a0a0a; }
+        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; }
         
-        .header { display:flex; align-items:center; gap:15px; margin-bottom:25px; }
-        .header h2 { margin:0; font-weight:900; letter-spacing:1px; }
+        /* Header Section */
+        .header { padding: 20px; background: #0a0a0a; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #111; position: sticky; top: 0; z-index: 10; }
+        .header h2 { margin: 0; font-size: 22px; color: var(--primary); }
+        .search-bar { background: #151f21; padding: 10px 15px; border-radius: 12px; display: flex; align-items: center; margin: 15px; gap: 10px; border: 1px solid #222; }
+        .search-bar input { background: none; border: none; color: white; outline: none; width: 100%; font-size: 14px; }
 
-        /* Search Bar */
-        .search-box { background:#111; padding:12px 15px; border-radius:15px; border:1px solid #222; display:flex; align-items:center; gap:10px; margin-bottom:25px; }
-        .search-box input { background:none; border:none; color:#fff; outline:none; width:100%; font-size:14px; }
-
-        /* Chat Item Style */
-        .chat-list { display: flex; flex-direction: column; gap: 10px; }
-        .chat-item { background:#111; padding:15px; border-radius:22px; border:1px solid #222; display:flex; align-items:center; gap:15px; cursor:pointer; transition:0.3s; }
-        .chat-item:active { transform: scale(0.98); background:#161616; border-color: var(--c1); }
+        /* Chat List Item */
+        .chat-list { padding: 0 10px; }
+        .chat-item { display: flex; align-items: center; padding: 15px; background: var(--item-bg); margin-bottom: 8px; border-radius: 15px; cursor: pointer; text-decoration: none; color: white; transition: 0.2s; }
+        .chat-item:hover { background: #111; }
         
-        .avatar { width:55px; height:55px; border-radius:50%; background:linear-gradient(45deg, #1a1a1a, #222); border: 2px solid #333; display:flex; justify-content:center; align-items:center; overflow:hidden; }
-        .avatar img { width:100%; height:100%; object-fit:cover; }
-        .avatar i { font-size: 20px; color: var(--c1); }
-
-        .chat-info { flex:1; }
-        .chat-info .name { font-weight:900; font-size:15px; margin-bottom:3px; display: flex; align-items: center; gap: 5px; }
-        .chat-info .last-msg { font-size:12px; color:#555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+        .chat-item img { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 2px solid #222; }
+        .chat-info { flex: 1; margin-left: 15px; }
+        .chat-info h4 { margin: 0 0 5px; font-size: 16px; }
+        .chat-info p { margin: 0; font-size: 13px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
         
-        .time { font-size:10px; color:#333; }
-        .vip-badge { color: #ffd700; font-size: 10px; }
+        .chat-meta { text-align: right; }
+        .chat-meta span { font-size: 11px; color: #444; }
+        .unread { background: var(--primary); color: black; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: bold; margin-top: 5px; display: inline-block; }
 
-        /* Empty State */
-        .empty-hint { text-align: center; color: #333; margin-top: 50px; font-size: 13px; }
+        /* Float Button */
+        .fab { position: fixed; bottom: 20px; right: 20px; width: 55px; height: 55px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: black; font-size: 20px; box-shadow: 0 5px 15px rgba(0, 242, 255, 0.3); cursor: pointer; }
     </style>
 </head>
 <body>
+
     <div class="header">
-        <i class="fas fa-arrow-left" onclick="window.location.href='dashboard'" style="cursor:pointer"></i>
-        <h2>Chats</h2>
+        <h2>Z-SPACE</h2>
+        <i class="fas fa-search" style="color: #555;"></i>
     </div>
 
-    <div class="search-box">
-        <i class="fas fa-search" style="color:#333"></i>
-        <input type="text" placeholder="Search people..." id="search-input">
+    <div class="search-bar">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="Search chats..." id="searchBox">
     </div>
 
-    <div class="chat-list" id="chat-container">
-        </div>
+    <div class="chat-list" id="list">
+        <a href="chat.html?user=Global" class="chat-item">
+            <img src="https://i.ibb.co/vzPRm9r/blitz-profile.jpg" alt="Global">
+            <div class="chat-info">
+                <h4 style="color: var(--primary);">Global Chat 🌏</h4>
+                <p id="global-last-msg">Loading latest messages...</p>
+            </div>
+            <div class="chat-meta">
+                <span>12:45 PM</span><br>
+                <div class="unread">99+</div>
+            </div>
+        </a>
 
-    <div class="empty-hint" id="empty-msg">
-        <i class="fas fa-comment-slash" style="font-size:30px; margin-bottom:10px; display:block;"></i>
-        No conversations yet.<br>Start a chat from someone's profile.
+        <a href="inbox.html?user=DevTeam" class="chat-item">
+            <img src="https://ui-avatars.com/api/?name=Dev+Team&background=0D8ABC&color=fff" alt="Dev">
+            <div class="chat-info">
+                <h4>Dev Team 🛠️</h4>
+                <p>Welcome to Z-Space Engine!</p>
+            </div>
+            <div class="chat-meta">
+                <span>Yesterday</span>
+            </div>
+        </a>
+    </div>
+
+    <div class="fab" onclick="newChat()">
+        <i class="fas fa-pen"></i>
     </div>
 
     <script>
-        const myPhone = "09688543022";
-
-        // Chat စာရင်းကို Render လုပ်တဲ့ Function
-        function loadChats() {
-            const container = document.getElementById('chat-container');
-            const emptyHint = document.getElementById('empty-msg');
-            
-            // LocalStorage ထဲက 'chat_' နဲ့စတဲ့ key တွေကို ရှာမယ်
-            const chats = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key.startsWith('chat_')) {
-                    const parts = key.split('_');
-                    // ကိုယ်နဲ့ပြောထားတဲ့ တခြားတစ်ယောက်ရဲ့ ID ကို ယူမယ်
-                    const otherUser = parts.find(p => p !== 'chat' && p !== localStorage.getItem('user_phone'));
-                    if (otherUser) chats.push(otherUser);
-                }
-            }
-
-            // Duplicate တွေဖျက်မယ်
-            const uniqueUsers = [...new Set(chats)];
-
-            if (uniqueUsers.length > 0) {
-                emptyHint.style.display = 'none';
-                container.innerHTML = uniqueUsers.map(user => `
-                    <div class="chat-item" onclick="window.location.href='inbox?user=${user}'">
-                        <div class="avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="chat-info">
-                            <div class="name">
-                                ${user === myPhone ? 'OWNER <i class="fas fa-crown vip-badge"></i>' : 'User_' + user.slice(-4)}
-                            </div>
-                            <div class="last-msg">Tap to start conversation...</div>
-                        </div>
-                        <div class="time">Just now</div>
-                    </div>
-                `).join('');
+        // စာပို့မယ့်သူအသစ်ကို ဖုန်းနံပါတ်နဲ့ ရှာဖွေခြင်း
+        function newChat() {
+            const phone = prompt("Enter Phone Number to Chat:");
+            if(phone) {
+                window.location.href = `inbox.html?user=${phone}`;
             }
         }
 
-        loadChats();
+        // Global Chat ထဲက နောက်ဆုံးစာကို ပြဖို့ ကြိုးစားကြည့်မယ်
+        async function updateLastMsg() {
+            try {
+                const res = await fetch('/api/messages/Guest/Global');
+                const data = await res.json();
+                if(data.length > 0) {
+                    document.getElementById('global-last-msg').innerText = data[data.length - 1].text;
+                }
+            } catch(e) { console.log("Updating list..."); }
+        }
+
+        setInterval(updateLastMsg, 5000);
+        updateLastMsg();
     </script>
 </body>
 </html>

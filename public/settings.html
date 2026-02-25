@@ -1,26 +1,118 @@
 <!DOCTYPE html>
 <html lang="my">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Settings</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;900&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings | Z-SPACE</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root { --c1:#00f2ff; --bg:#050508; }
-        body { margin:0; background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; padding:20px; }
-        .menu-item { background:#111; padding:18px; border-radius:20px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; border:1px solid #222; cursor:pointer; }
-        .menu-info { display:flex; align-items:center; gap:15px; }
-        .menu-info i { color:var(--c1); }
+        :root { --primary: #00f2ff; --bg: #050508; --card-bg: #0a1214; }
+        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; display: flex; justify-content: center; padding-top: 20px; }
+        
+        .container { width: 340px; padding: 15px; }
+        
+        /* Profile Summary Section */
+        .profile-snap { 
+            background: linear-gradient(145deg, #0a1214, #050508); 
+            padding: 20px; border-radius: 20px; display: flex; align-items: center; 
+            gap: 15px; margin-bottom: 25px; border: 1px solid #111;
+        }
+        .profile-snap img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
+        .profile-snap h3 { margin: 0; font-size: 18px; color: var(--primary); }
+        .profile-snap p { margin: 3px 0 0; font-size: 12px; color: #555; }
+
+        /* Settings List Groups */
+        .setting-group { background: var(--card-bg); border-radius: 20px; overflow: hidden; margin-bottom: 20px; border: 1px solid #111; }
+        .setting-item { 
+            display: flex; align-items: center; justify-content: space-between; 
+            padding: 15px 20px; cursor: pointer; transition: 0.2s; text-decoration: none; color: white;
+            border-bottom: 1px solid #050508;
+        }
+        .setting-item:last-child { border-bottom: none; }
+        .setting-item:active { background: #111; }
+
+        .item-left { display: flex; align-items: center; gap: 15px; }
+        .item-left i { font-size: 18px; width: 25px; text-align: center; color: #555; }
+        .item-left span { font-size: 14px; font-weight: 500; }
+        
+        .chevron { font-size: 12px; color: #333; }
+        .val { font-size: 12px; color: var(--primary); margin-right: 10px; }
     </style>
 </head>
 <body>
-    <div style="display:flex; align-items:center; gap:15px; margin-bottom:30px;"><i class="fas fa-arrow-left" onclick="window.location.href='dashboard'"></i><h2>Settings</h2></div>
-    <div class="menu-list">
-        <div class="menu-item" onclick="window.location.href='edit-profile'"><div class="menu-info"><i class="fas fa-user-edit"></i><div>Edit Profile</div></div><i class="fas fa-chevron-right"></i></div>
-        <div class="menu-item" onclick="window.location.href='appearance'"><div class="menu-info"><i class="fas fa-palette"></i><div>Appearance (Shop)</div></div><i class="fas fa-chevron-right"></i></div>
-        <div class="menu-item" onclick="window.location.href='security'"><div class="menu-info"><i class="fas fa-lock"></i><div>Security & 2FA</div></div><i class="fas fa-chevron-right"></i></div>
-        <div class="menu-item" onclick="window.location.href='about-device'"><div class="menu-info"><i class="fas fa-mobile"></i><div>About Device</div></div><i class="fas fa-chevron-right"></i></div>
-        <div class="menu-item" onclick="localStorage.clear(); window.location.href='/'"><div class="menu-info" style="color:#ff0055"><i class="fas fa-sign-out-alt"></i><div>Logout</div></div></div>
+
+    <div class="container">
+        <div class="profile-snap">
+            <img id="set-img" src="https://i.ibb.co/vzPRm9r/blitz-profile.jpg" alt="User">
+            <div>
+                <h3 id="set-name">BLITZ</h3>
+                <p id="set-phone">+95 9xxxxxxxxx</p>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <a href="edit-profile.html" class="setting-item">
+                <div class="item-left">
+                    <i class="fas fa-user-edit"></i>
+                    <span>Edit Profile</span>
+                </div>
+                <i class="fas fa-chevron-right chevron"></i>
+            </a>
+            <a href="security.html" class="setting-item">
+                <div class="item-left">
+                    <i class="fas fa-lock"></i>
+                    <span>Privacy and Security</span>
+                </div>
+                <i class="fas fa-chevron-right chevron"></i>
+            </a>
+        </div>
+
+        <div class="setting-group">
+            <div class="setting-item">
+                <div class="item-left">
+                    <i class="fas fa-bell"></i>
+                    <span>Notifications</span>
+                </div>
+                <span class="val">On</span>
+            </div>
+            <div class="setting-item">
+                <div class="item-left">
+                    <i class="fas fa-palette"></i>
+                    <span>Chat Settings</span>
+                </div>
+                <i class="fas fa-chevron-right chevron"></i>
+            </a>
+            <div class="setting-item">
+                <div class="item-left">
+                    <i class="fas fa-database"></i>
+                    <span>Data and Storage</span>
+                </div>
+                <i class="fas fa-chevron-right chevron"></i>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <div class="setting-item" onclick="alert('Z-SPACE Engine v1.0.0 Stable')">
+                <div class="item-left">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Z-SPACE Version</span>
+                </div>
+                <span class="val">1.0.0</span>
+            </div>
+        </div>
     </div>
+
+    <script>
+        window.onload = () => {
+            // LocalStorage ကနေ Data တွေကို ယူပြီး Settings မှာ ပြပေးမယ်
+            const name = localStorage.getItem('user_name') || 'BLITZ';
+            const phone = localStorage.getItem('user_phone') || 'No Phone';
+            const img = localStorage.getItem('user_img') || 'https://i.ibb.co/vzPRm9r/blitz-profile.jpg';
+
+            document.getElementById('set-name').innerText = name;
+            document.getElementById('set-phone').innerText = phone;
+            document.getElementById('set-img').src = img;
+        };
+    </script>
 </body>
 </html>

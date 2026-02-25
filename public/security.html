@@ -2,56 +2,102 @@
 <html lang="my">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Security | Z-SPACE</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root { --c1:#00f2ff; --bg:#050508; }
-        body { margin:0; background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; padding:20px; }
-        .card { background:#111; padding:25px; border-radius:30px; border:1px solid #222; margin-bottom:20px; }
-        label { display:block; font-size:11px; color:var(--c1); letter-spacing:2px; margin-bottom:8px; }
-        input { width:100%; background:#1a1a1a; border:1px solid #333; padding:15px; border-radius:15px; color:#fff; outline:none; box-sizing:border-box; margin-bottom:15px; }
-        .btn { width:100%; padding:15px; background:var(--c1); border:none; border-radius:15px; font-weight:900; cursor:pointer; }
-        .switch-box { display:flex; justify-content:space-between; align-items:center; }
+        :root { --primary: #00f2ff; --bg: #050508; --card-bg: #0a1214; --danger: #ff4b2b; }
+        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; display: flex; justify-content: center; padding-top: 30px; }
+        
+        .container { width: 340px; padding: 20px; }
+        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
+        .header a { color: white; text-decoration: none; font-size: 18px; }
+
+        .sec-item { 
+            background: var(--card-bg); padding: 15px; border-radius: 15px; 
+            display: flex; align-items: center; justify-content: space-between; 
+            margin-bottom: 12px; border: 1px solid #111; cursor: pointer;
+        }
+        .sec-info { display: flex; align-items: center; gap: 15px; }
+        .sec-info i { font-size: 18px; color: var(--primary); width: 25px; text-align: center; }
+        .sec-text h4 { margin: 0; font-size: 14px; }
+        .sec-text p { margin: 2px 0 0; font-size: 11px; color: #555; }
+
+        .toggle { width: 35px; height: 18px; background: #222; border-radius: 10px; position: relative; }
+        .toggle.on { background: var(--primary); }
+        .toggle::after { content: ''; position: absolute; width: 14px; height: 14px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: 0.3s; }
+        .toggle.on::after { left: 19px; }
+
+        .danger-zone { margin-top: 30px; border-top: 1px solid #222; padding-top: 20px; }
+        .delete-btn { color: var(--danger); font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
     </style>
 </head>
 <body>
-    <div style="display:flex; align-items:center; gap:15px; margin-bottom:30px;">
-        <i class="fas fa-arrow-left" onclick="window.location.href='settings'" style="cursor:pointer"></i>
-        <h2 style="margin:0">Security</h2>
-    </div>
 
-    <div class="card">
-        <label>CHANGE PASSWORD</label>
-        <input type="password" id="old-pass" placeholder="Current Password">
-        <input type="password" id="new-pass" placeholder="New Password">
-        <button class="btn" onclick="updatePass()">UPDATE PASSWORD</button>
-    </div>
-
-    <div class="card switch-box">
-        <div>
-            <div style="font-weight:900; font-size:15px;">2-Step Verification</div>
-            <div style="font-size:11px; color:#555;">Secure your account with 2FA</div>
+    <div class="container">
+        <div class="header">
+            <a href="settings.html"><i class="fas fa-arrow-left"></i></a>
+            <h3 style="margin:0;">Privacy & Security</h3>
         </div>
-        <input type="checkbox" id="tfa-toggle" style="width:20px;" onchange="toggle2FA()">
+
+        <div class="sec-item" onclick="this.querySelector('.toggle').classList.toggle('on')">
+            <div class="sec-info">
+                <i class="fas fa-shield-alt"></i>
+                <div class="sec-text">
+                    <h4>Two-Step Verification</h4>
+                    <p>Add an extra layer of security</p>
+                </div>
+            </div>
+            <div class="toggle"></div>
+        </div>
+
+        <div class="sec-item">
+            <div class="sec-info">
+                <i class="fas fa-user-lock"></i>
+                <div class="sec-text">
+                    <h4>Blocked Users</h4>
+                    <p>0 users blocked</p>
+                </div>
+            </div>
+            <i class="fas fa-chevron-right" style="font-size: 12px; color: #333;"></i>
+        </div>
+
+        <div class="sec-item">
+            <div class="sec-info">
+                <i class="fas fa-laptop"></i>
+                <div class="sec-text">
+                    <h4>Active Sessions</h4>
+                    <p>Manage your logged-in devices</p>
+                </div>
+            </div>
+            <i class="fas fa-chevron-right" style="font-size: 12px; color: #333;"></i>
+        </div>
+
+        <div class="sec-item" onclick="this.querySelector('.toggle').classList.toggle('on')">
+            <div class="sec-info">
+                <i class="fas fa-eye-slash"></i>
+                <div class="sec-text">
+                    <h4>Passcode Lock</h4>
+                    <p>Lock app with a 4-digit code</p>
+                </div>
+            </div>
+            <div class="toggle on"></div>
+        </div>
+
+        <div class="danger-zone">
+            <div class="delete-btn" onclick="clearData()">
+                <i class="fas fa-trash-alt"></i>
+                <span>Clear All Chat History & Data</span>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Load settings
-        document.getElementById('tfa-toggle').checked = localStorage.getItem('2fa_status') === 'enabled';
-
-        function updatePass() {
-            const np = document.getElementById('new-pass').value;
-            if(np.length < 6) return alert("Password must be at least 6 characters!");
-            localStorage.setItem('user_pass', np);
-            alert("Password updated successfully! 🔐");
-        }
-
-        function toggle2FA() {
-            const status = document.getElementById('tfa-toggle').checked ? 'enabled' : 'disabled';
-            localStorage.setItem('2fa_status', status);
-            alert("2FA has been " + status);
+        function clearData() {
+            if(confirm("Are you sure? This will delete all your local data and log you out.")) {
+                localStorage.clear();
+                window.parent.location.href = 'index.html'; // Logout to login page
+            }
         }
     </script>
 </body>

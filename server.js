@@ -30,7 +30,7 @@ app.use(helmet({
         },
     },
 }));
-app.use(express.json({ limit: '10mb' })); // Audio file တွေအတွက် limit နည်းနည်းတိုးထားတယ်
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -110,18 +110,45 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Login failed" }); }
 });
 
-// မင်းလိုနေတဲ့ API Path က ဒီမှာပါ သားကြီး
 app.get('/api/user/:phone', requireAuth, async (req, res) => {
     try {
         const user = await User.findOne({ phone: req.params.phone }).select('-password');
         if (!user) return res.status(404).json({ error: "User not found" });
         res.json(user);
-    } catch (e) {
-        res.status(500).json({ error: "Server error" });
-    }
+    } catch (e) { res.status(500).json({ error: "Server error" }); }
 });
 
-// စာဟောင်းတွေ ပြန်ယူဖို့ API
+// ⭐ Conversation List API (Messages Page အတွက်)
+app.get('/api/conversations', requireAuth, async (req, res) => {
+    try {
+        const myPhone = req.user.phone;
+        // ကိုယ်နဲ့ဆိုင်တဲ့ message အကုန်လုံးကို နောက်ဆုံးတစ်ခုကနေစယူမယ်
+        const messages = await Message.find({
+            $or: [{ senderPhone: myPhone }, { receiverPhone: myPhone }]
+        }).sort({ createdAt: -1 });
+
+        const convs = [];
+        const seenPeers = new Set();
+
+        for (const m of messages) {
+            const peer = m.senderPhone === myPhone ? m.receiverPhone : m.senderPhone;
+            if (!seenPeers.has(peer)) {
+                seenPeers.add(peer);
+                const peerUser = await User.findOne({ phone: peer }).select('name avatar');
+                convs.push({
+                    phone: peer,
+                    name: peerUser ? peerUser.name : "Unknown",
+                    avatar: peerUser ? peerUser.avatar : null,
+                    lastMsg: m.type === 'audio' ? '🎵 Voice message' : m.text,
+                    time: m.createdAt,
+                    unread: !m.isSeen && m.receiverPhone === myPhone
+                });
+            }
+        }
+        res.json(convs);
+    } catch (e) { res.status(500).json({ error: "Load failed" }); }
+});
+
 app.get('/api/messages/:myPhone/:peerPhone', requireAuth, async (req, res) => {
     try {
         const cid = getConversationId(req.params.myPhone, req.params.peerPhone);
@@ -171,7 +198,6 @@ io.use((socket, next) => {
 io.on('connection', (socket) => {
     const myPhone = socket.user.phone;
     socket.join(myPhone);
-    console.log(`⚡ ${myPhone} connected`);
 
     socket.on('typing', (data) => {
         socket.to(data.receiver).emit('is_typing', { sender: myPhone });
@@ -182,9 +208,7 @@ io.on('connection', (socket) => {
         socket.to(data.sender).emit('messages_read', { by: myPhone });
     });
 
-    socket.on('disconnect', () => console.log("🔥 Disconnected"));
+    socket.on('disconnect', () => {});
 });
 
-server.listen(process.env.PORT || 3000, () => {
-    console.log("🚀 Server running on port " + (process.env.PORT || 3000));
-});
+server.listen(process.env.PORT || 3000);

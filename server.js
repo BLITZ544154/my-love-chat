@@ -30,12 +30,11 @@ app.use(helmet({
         },
     },
 }));
-app.use(express.json({ limit: '5mb' }));
+app.use(express.json({ limit: '10mb' })); // Audio file တွေအတွက် limit နည်းနည်းတိုးထားတယ်
 app.use(express.static(path.join(__dirname, 'public')));
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const MONGO_URI = process.env.MONGODB_URI;
-const CLOUDINARY_URL = process.env.CLOUDINARY_URL;
 
 cloudinary.config({ secure: true });
 
@@ -65,7 +64,7 @@ const messageSchema = new mongoose.Schema({
     receiverPhone: { type: String, required: true },
     text: { type: String, required: true },
     type: { type: String, enum: ['text', 'audio'], default: 'text' },
-    isSeen: { type: Boolean, default: false } // Seen feature အတွက် ထည့်ထားသည်
+    isSeen: { type: Boolean, default: false }
 }, { timestamps: true });
 
 const Message = mongoose.model('Message', messageSchema);
@@ -79,7 +78,8 @@ async function uploadBase64ToCloudinary(dataUrl, folder) {
 
 // --- Auth Middleware ---
 function requireAuth(req, res, next) {
-    const token = req.headers.authorization?.split(' ')[1];
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1];
     if (!token) return res.status(401).json({ error: 'Unauthorized' });
     try {
         const payload = jwt.verify(token, JWT_SECRET);
@@ -110,6 +110,26 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Login failed" }); }
 });
 
+// မင်းလိုနေတဲ့ API Path က ဒီမှာပါ သားကြီး
+app.get('/api/user/:phone', requireAuth, async (req, res) => {
+    try {
+        const user = await User.findOne({ phone: req.params.phone }).select('-password');
+        if (!user) return res.status(404).json({ error: "User not found" });
+        res.json(user);
+    } catch (e) {
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+// စာဟောင်းတွေ ပြန်ယူဖို့ API
+app.get('/api/messages/:myPhone/:peerPhone', requireAuth, async (req, res) => {
+    try {
+        const cid = getConversationId(req.params.myPhone, req.params.peerPhone);
+        const msgs = await Message.find({ conversationId: cid }).sort({ createdAt: 1 }).limit(100);
+        res.json(msgs);
+    } catch (e) { res.status(500).json({ error: "Load failed" }); }
+});
+
 app.post('/api/send', sendLimiter, requireAuth, async (req, res) => {
     try {
         const { receiver, text, type = 'text' } = req.body;
@@ -138,9 +158,10 @@ app.use((req, res, next) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// --- Socket.io Logic (The "Magic" Part) ---
+// --- Socket.io Logic ---
 io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
+    if (!token) return next(new Error('Auth error'));
     try {
         socket.user = jwt.verify(token, JWT_SECRET);
         next();
@@ -152,27 +173,18 @@ io.on('connection', (socket) => {
     socket.join(myPhone);
     console.log(`⚡ ${myPhone} connected`);
 
-    // Typing...
     socket.on('typing', (data) => {
         socket.to(data.receiver).emit('is_typing', { sender: myPhone });
     });
 
-    // Seen Status
     socket.on('mark_seen', async (data) => {
         await Message.updateMany({ conversationId: getConversationId(myPhone, data.sender), receiverPhone: myPhone }, { isSeen: true });
         socket.to(data.sender).emit('messages_read', { by: myPhone });
     });
 
-    // Call Signaling
-    socket.on('call_request', (data) => {
-        socket.to(data.to).emit('incoming_call', { from: myPhone, signal: data.signal });
-    });
-
-    socket.on('call_response', (data) => {
-        socket.to(data.to).emit('call_finalized', { signal: data.signal, accepted: data.accepted });
-    });
-
     socket.on('disconnect', () => console.log("🔥 Disconnected"));
 });
 
-server.listen(process.env.PORT || 3000);
+server.listen(process.env.PORT || 3000, () => {
+    console.log("🚀 Server running on port " + (process.env.PORT || 3000));
+});

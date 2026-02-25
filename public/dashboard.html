@@ -1,38 +1,118 @@
 <!DOCTYPE html>
 <html lang="my">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Z-SPACE | Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <style>
         :root { --c1:#00f2ff; --c2:#ff0055; --bg:#050508; }
-        body { margin:0; background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; display:flex; flex-direction:column; align-items:center; min-height:100vh; padding:20px; }
-        .profile-card { background:#111; width:340px; padding:60px 20px 40px; border-radius:40px; text-align:center; border:1px solid #222; position:relative; }
-        .avatar-container { position:relative; width:130px; height:130px; margin:0 auto 20px; display:flex; justify-content:center; align-items:center; }
-        .rotating-border { position:absolute; width:100%; height:100%; border-radius:50%; background:conic-gradient(var(--c1), var(--c2), var(--c1)); animation:rot 3s linear infinite; }
-        @keyframes rot { 100% { transform:rotate(360deg); } }
-        .avatar-static { width:115px; height:115px; background:#000; border-radius:50%; z-index:2; overflow:hidden; display:flex; justify-content:center; align-items:center; }
-        .avatar-static img { width:100%; height:100%; object-fit:cover; }
-        .settings-btn { position:absolute; top:20px; right:20px; cursor:pointer; }
+        body { margin:0; background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; display:flex; flex-direction:column; align-items:center; min-height:100vh; padding:20px; transition: 0.5s; }
+        
+        /* Profile Card */
+        .profile-card { background:#111; width:340px; padding:60px 20px 40px; border-radius:40px; text-align:center; border:1px solid #222; position:relative; overflow:hidden; }
+        .cover-bg { position:absolute; top:0; left:0; width:100%; height:140px; background:linear-gradient(to bottom, rgba(0,242,255,0.1), transparent); z-index:0; object-fit: cover; }
+        
+        /* Action Buttons */
+        .settings-btn, .logout-btn { position:absolute; top:20px; width:40px; height:40px; background:rgba(255,255,255,0.05); border-radius:12px; display:flex; justify-content:center; align-items:center; border:1px solid rgba(255,255,255,0.1); cursor:pointer; z-index:10; }
+        .settings-btn { right:20px; }
+        .logout-btn { left:20px; color: #ff0055; }
+
+        /* Avatar Fix: ပုံကို တည့်တည့်ထားပြီး ဘောင်ကိုပဲ လည်စေမယ် */
+        .avatar-container { position: relative; width: 130px; height: 130px; margin: 0 auto 20px; display: flex; justify-content: center; align-items: center; z-index: 1; }
+        .rotating-border { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(from 0deg, var(--c1), var(--c2), var(--c1)); animation: rotateFrame 3s linear infinite; z-index: 1; }
+        @keyframes rotateFrame { 100% { transform: rotate(360deg); } }
+        .avatar-static { position: relative; width: 115px; height: 115px; background: #000; border-radius: 50%; z-index: 2; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        .avatar-static img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+
+        /* VIP Owner Style */
+        .user-name { font-size:24px; font-weight:900; color:#fff; margin:10px 0; }
+        .vip-name { color: #ffd700 !important; text-shadow: 0 0 15px rgba(255,215,0,0.8); }
+        .crown-icon { font-size: 16px; color: #ffd700; margin-left: 5px; }
+
+        .user-handle { font-size:12px; color: var(--c1); margin-bottom: 10px; display: block; opacity: 0.8; }
+        .user-bio { font-size:12px; color:#666; margin-bottom:20px; padding:0 20px; line-height:1.5; }
+        
+        /* Stats Box */
+        .stats-box { background:rgba(0,242,255,0.05); border:1px solid rgba(0,242,255,0.1); padding:15px; border-radius:20px; color:var(--c1); font-weight:bold; display:flex; align-items:center; justify-content:center; gap:10px; }
+
+        /* Chat Button */
+        .chat-nav-btn { width:340px; padding:18px; background:linear-gradient(45deg, #00f2ff, #ff0055); border:none; border-radius:20px; color:#fff; font-weight:900; margin-top:20px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; box-shadow: 0 10px 20px rgba(0,242,255,0.2); transition: 0.3s; }
+        .chat-nav-btn:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
-    <div class="profile-card">
-        <div class="settings-btn" onclick="window.location.href='settings'"><i class="fas fa-cog"></i></div>
-        <div class="avatar-container"><div class="rotating-border"></div><div class="avatar-static"><img src="B L I T Z.jpg" id="main-avatar"></div></div>
-        <h2 id="d-name">Loading...</h2>
-        <p id="d-ph" style="color:var(--c1); font-size:12px;"></p>
-        <p id="d-bio" style="font-size:12px; color:#666;"></p>
-        <div style="background:rgba(0,242,255,0.05); padding:15px; border-radius:20px; color:#ffd700;">Points: 999,999</div>
-    </div>
     <script>
-        if(!localStorage.getItem('isLoggedIn')) window.location.href='/';
-        const ph = localStorage.getItem('user_phone');
-        document.getElementById('d-name').innerText = localStorage.getItem('glow_user') || "User";
-        document.getElementById('d-ph').innerText = "PH: " + ph;
-        document.getElementById('d-bio').innerText = localStorage.getItem('user_bio') || "Hey there!";
-        if(localStorage.getItem('user_avatar')) document.getElementById('main-avatar').src = localStorage.getItem('user_avatar');
+        // အကောင့်မဝင်ထားရင် Login ကို ပြန်ပို့မယ်
+        if(localStorage.getItem('isLoggedIn') !== 'true') window.location.href = '/';
+    </script>
+
+    <div class="profile-card">
+        <div class="cover-bg" id="current-bg"></div>
+        <div class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i></div>
+        <div class="settings-btn" onclick="window.location.href='settings'"><i class="fas fa-cog"></i></div>
+        
+        <div class="avatar-container">
+            <div class="rotating-border"></div>
+            <div class="avatar-static"><img src="B L I T Z.jpg" id="main-avatar"></div>
+        </div>
+
+        <h2 class="user-name" id="display-name">Loading...</h2>
+        <span class="user-handle" id="display-handle">@user</span>
+        <p class="user-bio" id="display-bio">Loading bio...</p>
+        
+        <div class="stats-box" id="point-display">
+            <i class="fas fa-coins" style="color:#ffd700"></i> Points: 0
+        </div>
+    </div>
+
+    <button class="chat-nav-btn" onclick="window.location.href='chat'">
+        <span><i class="fas fa-globe"></i> GLOBAL CHAT</span>
+        <i class="fas fa-chevron-right"></i>
+    </button>
+
+    <script>
+        const syncProfile = () => {
+            const ph = localStorage.getItem('user_phone');
+            const myPhone = "09688543022"; // မင်းရဲ့ Owner ဖုန်းနံပါတ်
+            const nameEl = document.getElementById('display-name');
+            const pointEl = document.getElementById('point-display');
+
+            // Set Basic Data
+            nameEl.innerText = localStorage.getItem('glow_user') || "BLITZ";
+            document.getElementById('display-handle').innerText = "@user_" + (ph ? ph.slice(-4) : "id");
+            document.getElementById('display-bio').innerText = localStorage.getItem('user_bio') || "Hey there! I'm using Z-SPACE.";
+
+            // Owner Check
+            if (ph === myPhone) {
+                nameEl.classList.add('vip-name');
+                nameEl.innerHTML += ' <i class="fas fa-crown crown-icon"></i>';
+                pointEl.innerHTML = `<i class="fas fa-crown" style="color:#ffd700"></i> OWNER: ∞ POINTS`;
+            } else {
+                const pts = localStorage.getItem('user_points') || 999999;
+                pointEl.innerHTML = `<i class="fas fa-coins" style="color:#ffd700"></i> Points: ${pts.toLocaleString()}`;
+            }
+
+            // Avatar & Background
+            if(localStorage.getItem('user_avatar')) document.getElementById('main-avatar').src = localStorage.getItem('user_avatar');
+            if(localStorage.getItem('user_bg')) document.getElementById('current-bg').style.background = `url(${localStorage.getItem('user_bg')}) center/cover`;
+            
+            // Theme Sync
+            const theme = localStorage.getItem('app_theme') || 'cyan';
+            if(theme === 'pink') document.documentElement.style.setProperty('--c1', '#ff0055');
+            if(theme === 'gold') document.documentElement.style.setProperty('--c1', '#ffd700');
+        };
+
+        function logout() {
+            if(confirm("Logout from Z-SPACE?")) {
+                localStorage.removeItem('isLoggedIn');
+                window.location.href = '/';
+            }
+        }
+
+        syncProfile();
     </script>
 </body>
 </html>

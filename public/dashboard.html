@@ -3,99 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Z-SPACE | DASHBOARD</title>
+    <title>Z-SPACE | Dashboard</title>
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root { --c1:#00f2ff; --c2:#ff0055; --bg:#050508; }
-        body { margin:0; background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; display:flex; flex-direction:column; align-items:center; min-height:100vh; padding:30px 20px; }
-
-        /* Premium Card */
-        .profile-card { 
-            background: linear-gradient(145deg, #111, #0a0a0a); 
-            width: 340px; padding: 50px 20px; 
-            border-radius: 50px; text-align: center; 
-            border: 1px solid #222; position: relative; 
-            box-shadow: 0 30px 60px rgba(0,0,0,0.8);
-        }
-
-        /* Neon Rotating Frame */
-        .avatar-wrapper { 
-            width: 140px; height: 140px; margin: 0 auto 25px; 
-            position: relative; padding: 6px; border-radius: 50%; 
-            background: conic-gradient(from 0deg, var(--c1), var(--c2), #ffd700, var(--c1)); 
-            animation: rotateFrame 4s linear infinite; 
-            box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);
-        }
-        @keyframes rotateFrame { 100% { transform:rotate(360deg); } }
+        body { margin:0; background:var(--bg); color:#fff; font-family:'Outfit',sans-serif; display:flex; flex-direction:column; align-items:center; min-height:100vh; padding:20px; }
         
-        .avatar-inner { 
-            width: 100%; height: 100%; background: #000; border-radius: 50%; 
-            padding: 4px; display: flex; justify-content: center; align-items: center; 
-            transform: rotate(-360deg); animation: rotateFrame 4s linear infinite reverse; 
+        .profile-card { 
+            background:#111; width:340px; padding:60px 20px 40px; border-radius:40px; 
+            text-align:center; border:1px solid #222; position:relative; overflow:hidden;
         }
-        .avatar-inner img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid #111; }
 
-        /* Text Effects */
-        .user-name { font-size: 28px; font-weight: 900; color: #ffd700; text-shadow: 0 0 20px rgba(255, 213, 0, 0.6); margin: 10px 0; letter-spacing: 1px; }
-        .badge-row { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; }
-        .badge { font-size: 10px; background: rgba(255,255,255,0.05); padding: 6px 15px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); font-weight: 600; letter-spacing: 1px; color: #aaa; }
+        /* Cover BG */
+        .cover-bg { position:absolute; top:0; left:0; width:100%; height:140px; background:linear-gradient(to bottom, rgba(0,242,255,0.1), transparent); z-index:0; }
+        
+        /* Settings Button */
+        .settings-btn { position:absolute; top:20px; right:20px; width:40px; height:40px; background:rgba(255,255,255,0.05); border-radius:12px; display:flex; justify-content:center; align-items:center; border:1px solid rgba(255,255,255,0.1); cursor:pointer; z-index:10; }
 
-        .stats-container { background: rgba(0,242,255,0.03); border: 1px solid rgba(0,242,255,0.1); padding: 20px; border-radius: 30px; margin-top: 10px; }
-        .points { color: var(--c1); font-size: 20px; font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .avatar-wrapper { width:120px; height:120px; margin:0 auto 20px; position:relative; z-index:1; padding:5px; border-radius:50%; background:conic-gradient(from 0deg, var(--c1), var(--c2), var(--c1)); animation:rotateFrame 4s linear infinite; }
+        @keyframes rotateFrame { 100% { transform:rotate(360deg); } }
+        .avatar-inner { width:100%; height:100%; background:#000; border-radius:50%; padding:3px; display:flex; justify-content:center; align-items:center; transform:rotate(-360deg); animation:rotateFrame 4s linear infinite reverse; }
+        .avatar-inner img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
 
-        /* kkk.json Lottie */
-        .system-status { margin-top: 35px; opacity: 0.6; }
-
-        .btn-chat { 
-            width: 340px; padding: 20px; background: #151515; 
-            border: 1px solid #222; border-radius: 25px; color: #fff; 
-            font-weight: 900; margin-top: 25px; cursor: pointer; 
-            display: flex; justify-content: space-between; align-items: center; 
-            transition: 0.4s; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-        }
-        .btn-chat:hover { border-color: var(--c1); background: #1a1a1a; transform: translateY(-3px); }
+        .user-name { font-size:24px; font-weight:900; color:#ffd700; text-shadow:0 0 15px rgba(255,215,0,0.5); margin:10px 0; }
+        .user-bio { font-size:12px; color:#666; margin-bottom:20px; padding:0 20px; line-height:1.5; }
+        
+        .stats-box { background:rgba(0,242,255,0.05); border:1px solid rgba(0,242,255,0.1); padding:15px; border-radius:20px; color:var(--c1); font-weight:bold; display:flex; align-items:center; justify-content:center; gap:10px; }
+        .nav-btn { width:340px; padding:18px; background:#1a1a1a; border:1px solid #333; border-radius:20px; color:#fff; font-weight:bold; margin-top:15px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
     </style>
 </head>
 <body>
 
     <div class="profile-card">
+        <div class="cover-bg" id="current-bg"></div>
+        <div class="settings-btn" onclick="window.location.href='settings.html'">
+            <i class="fas fa-cog"></i>
+        </div>
+
         <div class="avatar-wrapper">
             <div class="avatar-inner">
                 <img src="B L I T Z.jpg" alt="Profile">
             </div>
         </div>
-
-        <div class="badge-row">
-            <span class="badge">PLATINUM</span>
-            <span class="badge">VERIFIED</span>
-        </div>
-
-        <h2 class="user-name" id="display-name">Loading...</h2>
         
-        <div class="stats-container">
-            <div class="points">
-                <i class="fas fa-coins" style="color:#ffd700"></i>
-                999,999
-            </div>
+        <h2 class="user-name" id="display-name">Loading...</h2>
+        <p class="user-bio" id="display-bio">No bio yet.</p>
+
+        <div class="stats-box">
+            <i class="fas fa-coins" style="color:#ffd700"></i> Points: 999,999
         </div>
 
-        <div class="system-status">
-            <lottie-player src="kkk.json" background="transparent" speed="1" style="width: 80px; height: 80px; margin: auto;" loop autoplay></lottie-player>
-            <p style="font-size:9px; color:var(--c1); letter-spacing: 3px; font-weight: 600;">ENCRYPTED SESSION</p>
+        <div style="margin-top:25px;">
+            <lottie-player src="kkk.json" background="transparent" speed="1" style="width: 50px; height: 50px; margin: auto;" loop autoplay></lottie-player>
+            <p style="font-size:9px; color:#444; letter-spacing:2px;">ENCRYPTED SESSION</p>
         </div>
     </div>
 
-    <button class="btn-chat" onclick="alert('Chat System Online at 2:00 PM!')">
-        <span><i class="fas fa-bolt" style="color:var(--c1); margin-right: 10px;"></i> GLOBAL CHAT</span>
-        <i class="fas fa-arrow-right"></i>
+    <button class="nav-btn" onclick="alert('Coming Soon!')">
+        <span><i class="fas fa-comments"></i> GLOBAL CHAT</span>
+        <i class="fas fa-chevron-right"></i>
     </button>
 
     <script>
-        const name = localStorage.getItem('glow_user');
-        if(name) { document.getElementById('display-name').innerText = name; }
-        else { window.location.href = "index.html"; }
+        document.getElementById('display-name').innerText = localStorage.getItem('glow_user') || "Guest User";
+        document.getElementById('display-bio').innerText = localStorage.getItem('user_bio') || "Hey there! I'm using Z-SPACE.";
+        
+        // Background ဝယ်ထားတာရှိရင် ပြမယ်
+        const savedBG = localStorage.getItem('user_bg');
+        if(savedBG) document.getElementById('current-bg').style.background = `url(${savedBG}) center/cover`;
     </script>
 </body>
 </html>

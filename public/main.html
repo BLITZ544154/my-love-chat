@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Z-SPACE</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root { --c1:#00f2ff; --bg:#050508; }
+        body { margin:0; background:var(--bg); font-family:sans-serif; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+        #view { flex:1; border:none; width:100%; }
+        .nav { height:70px; background:#0a0a0a; display:flex; justify-content:space-around; align-items:center; border-top:1px solid #111; }
+        .item { color:#444; text-align:center; cursor:pointer; }
+        .item.active { color:var(--c1); }
+        .item i { font-size:22px; display:block; }
+        .item span { font-size:10px; font-weight:bold; }
+    </style>
+</head>
+<body>
+    <iframe src="messages.html" id="view"></iframe>
+    <nav class="nav">
+        <div class="item active" onclick="go('messages.html', this)"><i class="fas fa-comment"></i><span>CHATS</span></div>
+        <div class="item" onclick="go('dashboard.html', this)"><i class="fas fa-user"></i><span>PROFILE</span></div>
+    </nav>
+    <script>
+        function go(src, el) {
+            document.querySelectorAll('.item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('view').src = src;
+        }
+    </script>
+</body>
+</html>

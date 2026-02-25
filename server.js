@@ -1,66 +1,65 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const path = require('path');
 const app = express();
 
-// Render အတွက် Port သတ်မှတ်ခြင်း (Default: 10000)
-const port = process.env.PORT || 10000;
-
-// ၁။ Static Files (HTML, CSS, JS, Images) များရှိရာ Public Folder ကို ချိတ်ခြင်း
+app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ၂။ စာမျက်နှာများသို့ လမ်းကြောင်းဖောက်ခြင်း (Routes)
+// MongoDB Connection (မင်းရဲ့ Password ထည့်ပြီးသား)
+const MONGO_URI = 'mongodb+srv://stunchou493_db_user:SroWdYcunJAibvyH@cluster0.mjzoi0g.mongodb.net/?appName=Cluster0';
 
-// Login/Register Page (Phone Number Auth)
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+mongoose.connect(MONGO_URI)
+    .then(() => console.log("✅ DATABASE CONNECTED SUCCESSFULLY!"))
+    .catch(err => console.log("❌ DB CONNECTION ERROR:", err));
+
+// Message Schema
+const messageSchema = new mongoose.Schema({
+    sender: String,
+    receiver: String,
+    text: String,
+    isEdited: { type: Boolean, default: false },
+    timestamp: { type: Date, default: Date.now }
+});
+const Message = mongoose.model('Message', messageSchema);
+
+// --- APIs ---
+
+// စာပို့ခြင်း
+app.post('/api/send', async (req, res) => {
+    try {
+        const msg = new Message(req.body);
+        await msg.save();
+        res.json({ success: true, msg });
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Dashboard Page (Owner VIP Mode ပါဝင်သည်)
-app.get('/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+// နှစ်ယောက်ကြားစာများ ဆွဲထုတ်ခြင်း
+app.get('/api/messages/:u1/:u2', async (req, res) => {
+    const msgs = await Message.find({
+        $or: [
+            { sender: req.params.u1, receiver: req.params.u2 },
+            { sender: req.params.u2, receiver: req.params.u1 }
+        ]
+    }).sort('timestamp');
+    res.json(msgs);
 });
 
-// စာရင်းကြည့်ရန် Messages List Page (Messenger Home လိုမျိုး)
-app.get('/messages', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'messages.html'));
+// စာဖျက်ခြင်း (Unsend for Everyone)
+app.delete('/api/message/:id', async (req, res) => {
+    await Message.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
 });
 
-// တစ်ယောက်ချင်းစီ သီးသန့်စကားပြောရန် Inbox Page
-app.get('/inbox', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'inbox.html'));
+// စာပြင်ခြင်း (Edit)
+app.put('/api/message/:id', async (req, res) => {
+    await Message.findByIdAndUpdate(req.params.id, { text: req.body.text, isEdited: true });
+    res.json({ success: true });
 });
 
-// Settings နဲ့ တခြား စာမျက်နှာများ
-app.get('/settings', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'settings.html'));
-});
+// Routes
+app.get('/main', (req, res) => res.sendFile(path.join(__dirname, 'public', 'main.html')));
+app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
-app.get('/edit-profile', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'edit-profile.html'));
-});
-
-app.get('/appearance', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'appearance.html'));
-});
-
-app.get('/security', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'security.html'));
-});
-
-app.get('/about-device', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'about-device.html'));
-});
-
-// ၃။ Catch-all Middleware: မရှိတဲ့ Link တွေဝင်ရင် Index (Login) ဆီ ပြန်ပို့မယ်
-app.use((req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// ၄။ Server စတင်နိုးကြားခြင်း
-app.listen(port, () => {
-    console.log(`-------------------------------------------`);
-    console.log(`🚀 Z-SPACE ENGINE: PRIVATE MESSAGING ACTIVE`);
-    console.log(`📡 Port: ${port}`);
-    console.log(`🔗 Preview: http://localhost:${port}`);
-    console.log(`-------------------------------------------`);
-});
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));

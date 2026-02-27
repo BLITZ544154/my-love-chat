@@ -1,1 +1,38 @@
-သားကြီး... မင်းရဲ့ Z-SPACE Project ကို GitHub မှာ တခြားသူတွေ မြင်တာနဲ့ "ဝါး... ဒါ လန်းတယ်" လို့ ဖြစ်သွားအောင် ပရော်ဖက်ရှင်နယ်ကျကျ README.md ရေးပေးလိုက်မယ်။အောက်က စာသားတွေကို Copy ကူးပြီး မင်းရဲ့ README.md file ထဲမှာ အကုန်ဖျက်ပြီး အစားထိုးလိုက်ပါ။🚀 Z-SPACE: Real-time Interactive Chat ApplicationZ-SPACE ဆိုတာကတော့ Node.js, Socket.io နဲ့ WebRTC နည်းပညာတွေကို အသုံးပြုပြီး တည်ဆောက်ထားတဲ့ ခေတ်မီ Real-time ဆက်သွယ်ရေး Platform တစ်ခုဖြစ်ပါတယ်။ တစ်ဦးနဲ့တစ်ဦး စာပို့ရုံတင်မကဘဲ အသံဖိုင်ပေးပို့တာနဲ့ အရည်အသွေးမြင့် Video/Voice Call တွေပါ ပြုလုပ်နိုင်အောင် ဖန်တီးထားပါတယ်။✨ အဓိက Feature များ (Key Features)💬 Real-time Messaging: Socket.io ကို အသုံးပြုထားလို့ စာပို့တာ၊ လက်ခံတာတွေက စက္ကန့်ပိုင်းအတွင်း မြန်ဆန်ပါတယ်။📞 High-Quality Video & Voice Calls: WebRTC (Simple-Peer) ကို အသုံးပြုပြီး တစ်ဖက်နဲ့တစ်ဖက် မျက်နှာချင်းဆိုင် စကားပြောနိုင်ပါတယ်။🎙 Voice Messages: စာရိုက်ရတာ ပျင်းတဲ့သူတွေအတွက် အသံဖိုင်တွေကို Cloudinary ပေါ် တင်ပြီး တိုက်ရိုက်ပေးပို့နိုင်ပါတယ်။🖥 Screen Sharing: Call ပြောနေစဉ်အတွင်း မိမိရဲ့ Computer Screen ကိုပါ တစ်ဖက်လူ မြင်ရအောင် Share လုပ်နိုင်ပါတယ်။🔐 Secure Authentication: JWT (JSON Web Token) နဲ့ Bcrypt တို့ကို သုံးထားလို့ အကောင့်လုံခြုံရေးအတွက် စိတ်ချရပါတယ်။🛡 Enhanced Security: Helmet.js နဲ့ Rate Limiting တို့ကို သုံးပြီး Brute-force attacks တွေနဲ့ လုံခြုံရေးဟာကွက်တွေကို ကာကွယ်ထားပါတယ်။🛠 အသုံးပြုထားတဲ့ နည်းပညာများ (Tech Stack)CategoryTechnologyBackendNode.js, Express.jsReal-timeSocket.ioDatabaseMongoDB (Mongoose)CallingWebRTC (Simple-Peer)StorageCloudinary (For Media)SecurityJWT, Bcrypt, Helmet, Express-Rate-Limit
+# 🚀 Z-SPACE: Real-time Messaging & Video Calling Platform
+
+**Z-SPACE** သည် Node.js, Socket.io နှင့် WebRTC တို့ကို အသုံးပြု၍ တည်ဆောက်ထားသော ခေတ်မီ Real-time ဆက်သွယ်ရေး Application တစ်ခုဖြစ်သည်။ စာတိုပေးပို့ခြင်း (Chatting) သာမက Voice Messages ပေးပို့ခြင်းနှင့် အရည်အသွေးမြင့် Video/Voice Call များကို တိုက်ရိုက်ပြုလုပ်နိုင်ရန် ဖန်တီးထားပါသည်။
+
+---
+
+## ✨ အဓိက လုပ်ဆောင်ချက်များ (Key Features)
+
+* **💬 Real-time Chatting:** Socket.io နည်းပညာကြောင့် စာတိုများ ပေးပို့ခြင်းနှင့် လက်ခံခြင်းကို စက္ကန့်ပိုင်းအတွင်း မြန်ဆန်စွာ လုပ်ဆောင်နိုင်သည်။
+* **📞 Peer-to-Peer Video/Voice Calls:** WebRTC (Simple-Peer) ကို အသုံးပြုထားသဖြင့် Server ကို ဝန်မပိစေဘဲ တိုက်ရိုက် Call ပြောဆိုနိုင်သည်။
+* **🎙 Voice Messaging:** အသံဖိုင်များကို Recording ပြုလုပ်၍ Cloudinary ပေါ်သို့ တင်ကာ အလွယ်တကူ ပေးပို့နိုင်သည်။
+* **🖥 Screen Sharing:** Call ပြောဆိုနေစဉ်အတွင်း မိမိ၏ Screen ကို တစ်ဖက်လူအား ပြသနိုင်သည်။
+* **🔔 Real-time Notifications:** စာအသစ်ရောက်သည့်အခါ သို့မဟုတ် ဖုန်းလာသည့်အခါ အသိပေးချက်များ ရရှိမည်။
+* **🔐 Secure Authentication:** JWT (JSON Web Token) နှင့် Bcrypt တို့ဖြင့် အကောင့်လုံခြုံရေးကို အဆင့်မြင့်စွာ တည်ဆောက်ထားသည်။
+
+---
+
+## 🛠 အသုံးပြုထားသော နည်းပညာများ (Tech Stack)
+
+| Category | Technology |
+| :--- | :--- |
+| **Backend** | Node.js, Express.js |
+| **Database** | MongoDB (Mongoose) |
+| **Real-time Engine** | Socket.io |
+| **P2P Connection** | WebRTC (Simple-Peer) |
+| **File Storage** | Cloudinary (For Voice/Avatar) |
+| **Security** | Helmet.js, JWT, Bcrypt |
+
+---
+
+## 🚀 စတင်အသုံးပြုရန် လမ်းညွှန် (Getting Started)
+
+### ၁။ Installation
+Project ကို Clone လုပ်ပြီး လိုအပ်သော Dependency များကို သွင်းပါ။
+```bash
+git clone [https://github.com/YourUsername/my-love-chat.git](https://github.com/YourUsername/my-love-chat.git)
+cd my-love-chat
+npm install
